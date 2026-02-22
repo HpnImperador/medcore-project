@@ -1,57 +1,147 @@
 # MedCore Project
 
-Sistema de gestão médica desenvolvido com NestJS e Prisma.
+Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS multi-tenant.
+
+## 📒 Histórico de Mudanças
+- Consulte `CHANGELOG.md` para o histórico cronológico de evolução do projeto.
+
+## 🧭 Padrão de Entregas
+- Processo operacional documentado em `docs/OPERACAO_ENTREGAS.md`.
+- Script de publicação de entrega grande: `scripts/push_grande_entrega.sh`.
 
 ## 🚀 Atualizações Recentes
 
-### Interceptors (Interceptadores)
-Foram adicionados interceptadores globais para monitoramento e padronização:
+### Arquitetura e Multi-tenant
+- Isolamento de dados por `organization_id`.
+- Controle de escopo por filiais via `user_branches`.
+- Implementação de **Repository Pattern** para desacoplar serviços do Prisma.
 
-- **LoggingInterceptor**: Monitora o tempo de execução de cada requisição HTTP e registra o usuário (ou IP) que iniciou a ação, útil para auditoria e performance.
-- **TransformInterceptor**: Intercepta todas as respostas de sucesso da API e as envolve em um formato padrão `{ data: ..., meta: ... }`, garantindo consistência no retorno para o frontend.
+### Módulo de Agendamentos
+- Criação da entidade `appointments` no schema Prisma com vínculos para:
+  - `organizations`
+  - `branches`
+  - `patients`
+  - `users` (médicos)
+- Endpoints implementados:
+  - `POST /appointments`
+  - `GET /appointments`
+  - `PATCH /appointments/:id/complete`
+- Regras aplicadas:
+  - Médico e paciente devem pertencer à mesma organização do usuário autenticado.
+  - Usuário só acessa filiais permitidas em `branch_ids`/`branchIds` do JWT.
+  - Médico precisa estar vinculado à filial em `user_branches`.
+  - Data de agendamento precisa ser futura (`@IsFutureDate`).
 
-### Filtros de Exceção (Exception Filters)
-- **GlobalExceptionFilter**: Captura exceções não tratadas, erros do Prisma (como violação de chave única ou registro não encontrado) e erros de validação, retornando uma resposta JSON amigável e padronizada com status HTTP correto.
+### Webhook n8n
+- Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
+- Variável utilizada: `N8N_APPOINTMENTS_WEBHOOK_URL`.
 
 ### Documentação (Swagger)
-A documentação interativa da API foi configurada.
-- Acesse `http://localhost:3000/api` após iniciar o servidor para visualizar e testar os endpoints.
+- Swagger configurado com bearer token JWT.
+- Acesse: `http://localhost:3000/api` (ou `http://192.168.0.109:3000/api`).
 
 ### Validação Customizada
-- **@IsFutureDate**: Um decorador de validação personalizado foi criado para garantir que agendamentos não sejam criados no passado. Ele é integrado diretamente aos DTOs e processado pelo `ValidationPipe`.
+- **@IsFutureDate**: decorador customizado para impedir agendamentos no passado.
+- Integrado ao `ValidationPipe` global (`whitelist: true`, `transform: true`).
 
 ### Autenticação
-- **Endpoint de Login**: Implementado o endpoint `POST /auth/login` que recebe `email` e `password`, valida as credenciais e retorna um token de acesso **JWT (JSON Web Token)**.
-- **Documentação Swagger**: O endpoint de login foi documentado com Swagger, permitindo testes e obtenção de tokens diretamente pela interface da API em `http://localhost:3000/api`. Agora é possível usar o botão "Authorize" no Swagger para autenticar as requisições nas rotas protegidas.
+- Proteção de rotas com `JwtAuthGuard` (Passport JWT).
+- Decorador `@CurrentUser` para extrair contexto autenticado nas rotas.
 
-### Usuários
-- **Perfil do Usuário**: Implementada a rota `GET /users/me` que retorna os dados do usuário autenticado.
-- **Proteção de Rotas**: Utilização do `JwtAuthGuard` para proteger endpoints que requerem autenticação.
-- **Decorador @CurrentUser**: Criado para extrair facilmente o usuário do payload do token JWT nas requisições.
+## 📌 Status dos Itens Arquiteturais (Roteiro)
+Itens mencionados como diretriz e que devem permanecer no roadmap de evolução:
+- `LoggingInterceptor` (auditoria/performance)
+- `TransformInterceptor` (envelope `{ data, meta }`)
+- `GlobalExceptionFilter` (mapeamento de erros)
+- Fluxo completo de `POST /auth/login`
+- `GET /users/me`
+- RBAC completo com `Role`, `@Roles` e `RolesGuard`
+- Testes E2E dedicados para autenticação/usuário
 
-### Testes E2E (Ponta a Ponta)
-- **Teste de Usuário**: Adicionado `test/users.e2e-spec.ts` para validar a rota `/users/me`.
-- **Cenários Cobertos**: Validação de acesso negado (401) sem token e acesso permitido (200) com token válido, garantindo que a senha não seja retornada.
+Observação: este README será mantido incrementalmente para refletir exatamente o que está implementado em cada etapa.
 
-### Controle de Acesso (RBAC)
-- **Role Enum**: Definido enum `Role` (USER, ADMIN, DOCTOR) para padronizar os tipos de usuários.
-- **@Roles Decorator**: Decorador para especificar quais perfis têm acesso a uma rota.
-- **RolesGuard**: Guardião que verifica se o usuário autenticado possui a role necessária para acessar o recurso.
+## 🧩 Estrutura de Domínio Atual
+- `organizations`
+- `branches`
+- `users`
+- `user_branches`
+- `patients`
+- `appointments`
+
+## 🔐 Payload JWT Esperado
+Campos mínimos no token:
+- `sub` (ou `user_id` / `id`)
+- `organization_id` (ou `organizationId`)
+- `branch_ids` (ou `branchIds`)
+
+Exemplo:
+```json
+{
+  "sub": "6ef3ab38-a6b8-4cb7-9a5a-182e6ffdc5c4",
+  "organization_id": "f8f79fe1-c4cf-4d98-b6e5-e5dd574029f4",
+  "branch_ids": ["f10f3f31-93e0-4f74-84cf-3d0864f0529e"],
+  "role": "DOCTOR"
+}
+```
+
+## ⚙️ Variáveis de Ambiente (backend/.env)
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `N8N_APPOINTMENTS_WEBHOOK_URL`
 
 ## 🧪 Testes
 
-O projeto inclui testes unitários e de integração (e2e).
-
 ### Rodando Testes Unitários
-Executa os testes isolados de serviços, interceptors, filtros e validadores customizados.
 ```bash
+cd backend
 npm run test
 ```
 
-### Rodando Testes E2E (Ponta a Ponta)
-Executa testes que simulam requisições reais à API, verificando o fluxo completo desde o controller até o banco de dados (ou mock).
+### Rodando Testes E2E
 ```bash
+cd backend
 npm run test:e2e
 ```
 
----
+## 🛠️ Setup e Execução
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run build
+npm run start:dev
+```
+
+## 🗃️ Migrações Prisma
+```bash
+cd backend
+npm run prisma:migrate
+npm run prisma:deploy
+```
+
+## 🔎 Exemplo cURL (Agendamento)
+
+Criar agendamento:
+```bash
+curl -X POST "http://192.168.0.109:3000/appointments" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "branch_id": "f10f3f31-93e0-4f74-84cf-3d0864f0529e",
+    "patient_id": "8bcb577b-cbb8-4a19-8dca-ef8a8eeead29",
+    "doctor_id": "6ef3ab38-a6b8-4cb7-9a5a-182e6ffdc5c4",
+    "scheduled_at": "2026-03-15T14:00:00.000Z",
+    "notes": "Retorno clínico."
+  }'
+```
+
+Concluir agendamento:
+```bash
+curl -X PATCH "http://192.168.0.109:3000/appointments/<APPOINTMENT_ID>/complete" \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+## ✅ Qualidade Atual (última varredura)
+- `npm run lint` passou
+- `npm run build` passou
+- `npm test -- --runInBand` passou

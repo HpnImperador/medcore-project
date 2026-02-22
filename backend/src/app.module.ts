@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // Adicione isso
+import { ConfigModule } from '@nestjs/config';
 import { PatientsModule } from './patients/patients.module';
 import { PrismaService } from './prisma/prisma.service';
+import { AppointmentsModule } from './appointments/appointments.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), // Isso carrega o arquivo .env automaticamente
-    PatientsModule
+    ConfigModule.forRoot({ isGlobal: true }),
+    PatientsModule,
+    AppointmentsModule,
   ],
   providers: [PrismaService],
 })
