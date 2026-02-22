@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model organizations {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String     @db.VarChar(255)
+  tax_id     String?    @unique @db.VarChar(20)
+  created_at DateTime?  @default(now()) @db.Timestamptz(6)
+  patients   patients[]
+  branches   branches[]
+  users      users[]
+}
+
+model branches {
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organization_id String?        @db.Uuid
+  name            String         @db.VarChar(255)
+  address         String?
+  created_at      DateTime?      @default(now()) @db.Timestamptz(6)
+  organization    organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user_branches   user_branches[]
+}
+
+model users {
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organization_id String?        @db.Uuid
+  name            String         @db.VarChar(255)
+  email           String         @unique @db.VarChar(255)
+  password_hash   String
+  role            String?        @db.VarChar(50)
+  created_at      DateTime?      @default(now()) @db.Timestamptz(6)
+  organization    organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user_branches   user_branches[]
+}
+
+model user_branches {
+  user_id   String   @db.Uuid
+  branch_id String   @db.Uuid
+  user      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  branch    branches @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  @@id([user_id, branch_id])
+}
+
+model patients {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organization_id String        @db.Uuid
+  name            String        @db.VarChar(255)
+  email           String?       @db.VarChar(255)
+  phone           String?       @db.VarChar(20)
+  organization    organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  @@index([organization_id])
+}

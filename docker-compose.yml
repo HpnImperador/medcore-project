@@ -1,0 +1,52 @@
+services:
+  alloydb:
+    image: postgres:15-alpine
+    container_name: medcore-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: medcore_root_2026
+      POSTGRES_DB: medcore_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - alloydb_data:/var/lib/postgresql/data
+    networks:
+      - medcore-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: medcore-redis
+    restart: always
+    networks:
+      - medcore-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: medcore-n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=alloydb
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=medcore_db
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=medcore_root_2026
+      - N8N_ENCRYPTION_KEY=medcore_secret_key
+      - N8N_SECURE_COOKIE=false
+      - N8N_DEFAULT_LOCALE=pt-BR
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - alloydb
+    networks:
+      - medcore-network
+
+networks:
+  medcore-network:
+    driver: bridge
+
+volumes:
+  alloydb_data:
+  n8n_data:
