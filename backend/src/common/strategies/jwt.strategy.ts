@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Role } from '../auth/role.enum';
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
 
 interface JwtPayload {
@@ -41,8 +42,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId,
       organizationId,
       branchIds: payload.branch_ids ?? payload.branchIds ?? [],
-      role: payload.role,
+      role: this.normalizeRole(payload.role),
       email: payload.email,
     };
+  }
+
+  private normalizeRole(value?: string): Role {
+    if (value === Role.ADMIN || value === Role.DOCTOR) {
+      return value;
+    }
+
+    return Role.USER;
   }
 }

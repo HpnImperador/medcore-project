@@ -45,7 +45,10 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Integrado ao `ValidationPipe` global (`whitelist: true`, `transform: true`).
 
 ### Autenticação
+- Endpoint `POST /auth/login` implementado com emissão de JWT.
+- Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
 - Proteção de rotas com `JwtAuthGuard` (Passport JWT).
+- RBAC implementado com `Role`, `@Roles` e `RolesGuard`.
 - Decorador `@CurrentUser` para extrair contexto autenticado nas rotas.
 
 ## 📌 Status dos Itens Arquiteturais (Roteiro)
@@ -53,9 +56,6 @@ Itens mencionados como diretriz e que devem permanecer no roadmap de evolução:
 - `LoggingInterceptor` (auditoria/performance)
 - `TransformInterceptor` (envelope `{ data, meta }`)
 - `GlobalExceptionFilter` (mapeamento de erros)
-- Fluxo completo de `POST /auth/login`
-- `GET /users/me`
-- RBAC completo com `Role`, `@Roles` e `RolesGuard`
 - Testes E2E dedicados para autenticação/usuário
 
 Observação: este README será mantido incrementalmente para refletir exatamente o que está implementado em cada etapa.
@@ -120,6 +120,16 @@ npm run prisma:deploy
 ```
 
 ## 🔎 Exemplo cURL (Agendamento)
+
+Login:
+```bash
+curl -X POST "http://192.168.0.109:3000/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "medico@medcore.com",
+    "password": "123456"
+  }'
+```
 
 Criar agendamento:
 ```bash

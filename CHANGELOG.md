@@ -7,9 +7,6 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 ## [Unreleased]
 
 ### Planejado
-- Implementação de `POST /auth/login`.
-- Implementação de `GET /users/me`.
-- RBAC completo com `Role`, `@Roles` e `RolesGuard`.
 - Interceptores globais (`LoggingInterceptor`, `TransformInterceptor`).
 - `GlobalExceptionFilter` com mapeamento de erros Prisma/validação.
 - Testes E2E dos fluxos de autenticação e usuários.
@@ -18,6 +15,11 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Padronização operacional de entregas em `docs/OPERACAO_ENTREGAS.md`.
 - Script de automação para commit/push de entrega grande:
   - `scripts/push_grande_entrega.sh`
+- Módulo `auth` com endpoint `POST /auth/login` para emissão de JWT.
+- Módulo `users` com endpoint `GET /users/me`.
+- RBAC com `Role`, `@Roles` e `RolesGuard`.
+- Repositório de usuários (`IUserRepository`) com implementação Prisma.
+- Compatibilidade de login com hash bcrypt e fallback legado em texto plano.
 
 ## [2026-02-22]
 

@@ -7,6 +7,9 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.
+- Implementação de autenticação com `POST /auth/login`.
+- Implementação de perfil autenticado com `GET /users/me`.
+- Implementação de RBAC com `Role`, `@Roles` e `RolesGuard`.
 - Adoção de Repository Pattern (`domain/repositories` + implementações Prisma).
 - Validação de data futura com `@IsFutureDate`.
 - JWT com Passport e `@CurrentUser` para contexto autenticado.
@@ -21,6 +24,8 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Swagger
 
 ## 📦 Módulos Atuais
+- `auth`
+- `users`
 - `patients`
 - `appointments`
 - `prisma`
