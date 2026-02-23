@@ -41,6 +41,12 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `PATCH /appointments/:id/cancel`
 - Regras de negócio para impedir cancelamento/reagendamento de consulta já concluída/cancelada, com registro de motivo em `notes`.
 - Bateria API ampliada para validar `reschedule` e `cancel` em fluxo real.
+- Módulo de observabilidade com healthchecks:
+  - `GET /health`
+  - `GET /health/db`
+  - `GET /health/n8n`
+  - `GET /health/metrics`
+- Bateria API ampliada para validar health endpoints.
 
 ## [2026-02-22]
 

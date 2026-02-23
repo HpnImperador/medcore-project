@@ -44,6 +44,15 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Swagger configurado com bearer token JWT.
 - Acesse: `http://localhost:3000/api` (ou `http://192.168.0.109:3000/api`).
 
+### Observabilidade
+- Endpoints de healthcheck:
+  - `GET /health`
+  - `GET /health/db`
+  - `GET /health/n8n`
+  - `GET /health/metrics`
+- `/health` retorna status consolidado (`ok`, `degraded`, `error`).
+- Quando `N8N_APPOINTMENTS_WEBHOOK_URL` não estiver definida, o status fica `degraded` sem derrubar a API.
+
 ### Interceptors e Exception Filter
 - `LoggingInterceptor` global para auditoria de método, rota, status, duração, ator e IP.
 - `TransformInterceptor` global com envelope padrão `{ data, meta }`.
@@ -125,6 +134,9 @@ cd /home/sppro/medcore-project
 ```
 Cobertura atual da bateria:
 - `GET /api`
+- `GET /health`
+- `GET /health/db`
+- `GET /health/metrics`
 - `POST /auth/login`
 - `GET /users/me`
 - `POST /auth/refresh`

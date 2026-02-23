@@ -20,6 +20,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - JWT com Passport e `@CurrentUser` para contexto autenticado.
 - Swagger com autenticação Bearer JWT.
 - Webhook assíncrono para n8n ao concluir agendamento.
+- Healthchecks e métricas básicas de processo (`/health/*`).
 
 ## 🧱 Stack
 - NestJS 11
@@ -92,6 +93,12 @@ WHERE email = 'medico@medcore.com';
 ## 📘 Documentação
 - Swagger: `http://localhost:3000/api`
 - Swagger (rede local): `http://192.168.0.109:3000/api`
+
+## 📈 Observabilidade
+- `GET /health`: status consolidado da API (DB + n8n).
+- `GET /health/db`: teste de conectividade com PostgreSQL.
+- `GET /health/n8n`: teste de conectividade do webhook n8n.
+- `GET /health/metrics`: uptime e uso de memória do processo.
 
 ## 🧪 Checks de Qualidade
 ```bash

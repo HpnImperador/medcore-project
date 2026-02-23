@@ -22,7 +22,13 @@ fail() { echo "[FAIL] $1"; exit 1; }
 http_code() {
   local method="$1"; shift
   local url="$1"; shift
-  curl -s -o /tmp/medcore_bateria_body.json -w "%{http_code}" -X "$method" "$url" "$@"
+  local code
+  if ! code=$(curl -sS -o /tmp/medcore_bateria_body.json -w "%{http_code}" -X "$method" "$url" "$@"); then
+    echo "000"
+    return 0
+  fi
+
+  echo "$code"
 }
 
 extract_json_field() {
@@ -45,10 +51,34 @@ TEST_PATIENT_ID="${INPUT_TEST_PATIENT_ID:-${TEST_PATIENT_ID:-}}"
 TEST_DOCTOR_ID="${INPUT_TEST_DOCTOR_ID:-${TEST_DOCTOR_ID:-}}"
 
 CODE=$(http_code GET "$BASE_URL/api")
+if [[ "$CODE" == "000" ]]; then
+  fail "Não foi possível conectar em $BASE_URL. Verifique se o backend está rodando."
+fi
 if [[ "$CODE" != "200" ]]; then
   fail "Swagger indisponível em $BASE_URL/api (HTTP $CODE)."
 fi
 ok "Swagger acessível (HTTP 200)."
+
+CODE=$(http_code GET "$BASE_URL/health")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /health falhou (HTTP $CODE)."
+fi
+ok "Health summary validado."
+
+CODE=$(http_code GET "$BASE_URL/health/db")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /health/db falhou (HTTP $CODE)."
+fi
+ok "Health DB validado."
+
+CODE=$(http_code GET "$BASE_URL/health/metrics")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /health/metrics falhou (HTTP $CODE)."
+fi
+ok "Health metrics validado."
 
 if [[ -z "$TEST_EMAIL" || -z "$TEST_PASSWORD" ]]; then
   warn "TEST_EMAIL/TEST_PASSWORD não informados. Pulando testes autenticados."
