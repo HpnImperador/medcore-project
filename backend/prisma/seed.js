@@ -21,6 +21,12 @@ const seedData = {
     password: '123456',
     role: 'DOCTOR',
   },
+  admin: {
+    name: 'Admin MedCore',
+    email: 'admin@medcore.com',
+    password: '123456',
+    role: 'ADMIN',
+  },
   patient: {
     name: 'Paciente Teste',
     email: 'paciente@medcore.com',
@@ -89,6 +95,27 @@ async function upsertDoctor(organizationId) {
   });
 }
 
+async function upsertAdmin(organizationId) {
+  const passwordHash = hashSync(seedData.admin.password, 10);
+
+  return prisma.users.upsert({
+    where: { email: seedData.admin.email },
+    create: {
+      organization_id: organizationId,
+      name: seedData.admin.name,
+      email: seedData.admin.email,
+      password_hash: passwordHash,
+      role: seedData.admin.role,
+    },
+    update: {
+      organization_id: organizationId,
+      name: seedData.admin.name,
+      password_hash: passwordHash,
+      role: seedData.admin.role,
+    },
+  });
+}
+
 async function upsertUserBranch(userId, branchId) {
   return prisma.user_branches.upsert({
     where: {
@@ -139,12 +166,15 @@ async function main() {
   const organization = await upsertOrganization();
   const branch = await upsertBranch(organization.id);
   const doctor = await upsertDoctor(organization.id);
+  const admin = await upsertAdmin(organization.id);
   await upsertUserBranch(doctor.id, branch.id);
   const patient = await upsertPatient(organization.id);
 
   const envContent = [
     `TEST_EMAIL=${seedData.doctor.email}`,
     `TEST_PASSWORD=${seedData.doctor.password}`,
+    `ADMIN_EMAIL=${seedData.admin.email}`,
+    `ADMIN_PASSWORD=${seedData.admin.password}`,
     `TEST_BRANCH_ID=${branch.id}`,
     `TEST_PATIENT_ID=${patient.id}`,
     `TEST_DOCTOR_ID=${doctor.id}`,
@@ -164,6 +194,9 @@ async function main() {
   console.log(`PATIENT_ID=${patient.id}`);
   console.log(`TEST_EMAIL=${seedData.doctor.email}`);
   console.log(`TEST_PASSWORD=${seedData.doctor.password}`);
+  console.log(`ADMIN_ID=${admin.id}`);
+  console.log(`ADMIN_EMAIL=${seedData.admin.email}`);
+  console.log(`ADMIN_PASSWORD=${seedData.admin.password}`);
   console.log(`SEED_ENV_PATH=${seedEnvPath}`);
 }
 

@@ -7,17 +7,22 @@ TEST_PASSWORD="${TEST_PASSWORD:-}"
 TEST_BRANCH_ID="${TEST_BRANCH_ID:-}"
 TEST_PATIENT_ID="${TEST_PATIENT_ID:-}"
 TEST_DOCTOR_ID="${TEST_DOCTOR_ID:-}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SEED_ENV_FILE="${SEED_ENV_FILE:-$REPO_ROOT/backend/.seed.env}"
 ENABLE_BRUTE_FORCE_CHECK="${ENABLE_BRUTE_FORCE_CHECK:-1}"
 LOGIN_MAX_FAILED_ATTEMPTS="${LOGIN_MAX_FAILED_ATTEMPTS:-5}"
+BRUTE_FORCE_TEST_IP="${BRUTE_FORCE_TEST_IP:-198.51.100.10}"
 
 INPUT_TEST_EMAIL="$TEST_EMAIL"
 INPUT_TEST_PASSWORD="$TEST_PASSWORD"
 INPUT_TEST_BRANCH_ID="$TEST_BRANCH_ID"
 INPUT_TEST_PATIENT_ID="$TEST_PATIENT_ID"
 INPUT_TEST_DOCTOR_ID="$TEST_DOCTOR_ID"
+INPUT_ADMIN_EMAIL="$ADMIN_EMAIL"
+INPUT_ADMIN_PASSWORD="$ADMIN_PASSWORD"
 
 ok() { echo "[OK] $1"; }
 warn() { echo "[WARN] $1"; }
@@ -53,6 +58,8 @@ TEST_PASSWORD="${INPUT_TEST_PASSWORD:-${TEST_PASSWORD:-}}"
 TEST_BRANCH_ID="${INPUT_TEST_BRANCH_ID:-${TEST_BRANCH_ID:-}}"
 TEST_PATIENT_ID="${INPUT_TEST_PATIENT_ID:-${TEST_PATIENT_ID:-}}"
 TEST_DOCTOR_ID="${INPUT_TEST_DOCTOR_ID:-${TEST_DOCTOR_ID:-}}"
+ADMIN_EMAIL="${INPUT_ADMIN_EMAIL:-${ADMIN_EMAIL:-}}"
+ADMIN_PASSWORD="${INPUT_ADMIN_PASSWORD:-${ADMIN_PASSWORD:-}}"
 
 CODE=$(http_code GET "$BASE_URL/api")
 if [[ "$CODE" == "000" ]]; then
@@ -109,6 +116,7 @@ JSON
 )
     CODE=$(http_code POST "$BASE_URL/auth/login" \
       -H "Content-Type: application/json" \
+      -H "X-Forwarded-For: $BRUTE_FORCE_TEST_IP" \
       -d "$BRUTE_PAYLOAD")
 
     if [[ "$attempt" -le "$LOGIN_MAX_FAILED_ATTEMPTS" ]]; then
@@ -125,6 +133,68 @@ JSON
     fi
   done
   ok "Proteção de brute force validada (401 até limite + 429 no bloqueio)."
+
+  if [[ -n "$ADMIN_EMAIL" && -n "$ADMIN_PASSWORD" ]]; then
+    ADMIN_LOGIN_PAYLOAD=$(cat <<JSON
+{"email":"$ADMIN_EMAIL","password":"$ADMIN_PASSWORD"}
+JSON
+)
+    CODE=$(http_code POST "$BASE_URL/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "$ADMIN_LOGIN_PAYLOAD")
+    if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "Login admin falhou (HTTP $CODE)."
+    fi
+
+    ADMIN_TOKEN=$(extract_json_field "access_token")
+    if [[ -z "$ADMIN_TOKEN" || "$ADMIN_TOKEN" == "undefined" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "Login admin não retornou access_token."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/auth/login-lock?email=$BRUTE_TEST_EMAIL&ip=$BRUTE_FORCE_TEST_IP" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /auth/login-lock falhou (HTTP $CODE)."
+    fi
+
+    LOCKED_STATUS=$(extract_json_field "locked")
+    if [[ "$LOCKED_STATUS" != "true" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /auth/login-lock deveria retornar locked=true."
+    fi
+
+    CLEAR_LOCK_PAYLOAD=$(cat <<JSON
+{"email":"$BRUTE_TEST_EMAIL","ip":"$BRUTE_FORCE_TEST_IP"}
+JSON
+)
+    CODE=$(http_code POST "$BASE_URL/auth/login-lock/clear" \
+      -H "Authorization: Bearer $ADMIN_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d "$CLEAR_LOCK_PAYLOAD")
+    if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "POST /auth/login-lock/clear falhou (HTTP $CODE)."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/auth/login-lock?email=$BRUTE_TEST_EMAIL&ip=$BRUTE_FORCE_TEST_IP" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /auth/login-lock (pós-clear) falhou (HTTP $CODE)."
+    fi
+
+    LOCKED_STATUS=$(extract_json_field "locked")
+    if [[ "$LOCKED_STATUS" != "false" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "Lock deveria estar limpo após /auth/login-lock/clear."
+    fi
+    ok "Endpoints admin de lock de login validados."
+  else
+    warn "ADMIN_EMAIL/ADMIN_PASSWORD não informados. Pulando validação dos endpoints admin de lock."
+  fi
 fi
 
 LOGIN_PAYLOAD=$(cat <<JSON

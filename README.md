@@ -176,6 +176,8 @@ Cobertura atual da bateria:
 Variáveis úteis da bateria:
 - `ENABLE_BRUTE_FORCE_CHECK` (default `1`)
 - `LOGIN_MAX_FAILED_ATTEMPTS` (default `5`)
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` (valida endpoints admin de lock quando informados)
+- `BRUTE_FORCE_TEST_IP` (default `198.51.100.10`)
 
 ## 🛠️ Setup e Execução
 ```bash
@@ -197,6 +199,7 @@ npm run prisma:seed
 O `prisma:seed` é idempotente e prepara base mínima para testes:
 - organização e filial demo
 - usuário médico demo (`medico@medcore.com` / `123456`)
+- usuário admin demo (`admin@medcore.com` / `123456`)
 - paciente demo
 - vínculo médico-filial em `user_branches`
 - gera `backend/.seed.env` com `TEST_*` e IDs para a bateria automática

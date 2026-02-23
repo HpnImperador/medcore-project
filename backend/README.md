@@ -75,11 +75,14 @@ O seed é idempotente e garante:
 - organização demo
 - filial demo
 - médico demo com vínculo em `user_branches`
+- admin demo para rotas operacionais protegidas
 - paciente demo
 
 Credenciais e IDs de teste gerados/atualizados:
 - `TEST_EMAIL=medico@medcore.com`
 - `TEST_PASSWORD=123456`
+- `ADMIN_EMAIL=admin@medcore.com`
+- `ADMIN_PASSWORD=123456`
 - `ORGANIZATION_ID`, `BRANCH_ID`, `DOCTOR_ID`, `PATIENT_ID` (exibidos no stdout)
 - arquivo `backend/.seed.env` com variáveis `TEST_*` para uso direto na bateria
 
@@ -138,6 +141,9 @@ Script de smoke para validar integração HTTP ponta a ponta:
 - Arquivo: `../scripts/bateria_api_backend.sh`
 - Fluxos: auth/login, users/me, auth/refresh, auth/logout, auth/logout-all e appointments.
 - Se `backend/.seed.env` existir, a bateria usa os valores `TEST_*` automaticamente.
+- Se `ADMIN_EMAIL` e `ADMIN_PASSWORD` estiverem disponíveis, valida também:
+  - `GET /auth/login-lock`
+  - `POST /auth/login-lock/clear`
 
 ## 📝 Padrão de Atualização deste README
 Sempre atualizar, a cada entrega:

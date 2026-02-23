@@ -61,6 +61,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Endpoints administrativos de suporte operacional para lock de login (somente ADMIN):
   - `GET /auth/login-lock`
   - `POST /auth/login-lock/clear`
+- Seed idempotente atualizado com usuário `ADMIN` padrão (`admin@medcore.com`) para validações operacionais.
+- Bateria API ampliada para validar `login-lock` e `login-lock/clear` quando credenciais admin estiverem disponíveis.
 
 ## [2026-02-22]
 
