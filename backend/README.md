@@ -10,6 +10,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Implementação de autenticação com `POST /auth/login`.
 - Implementação de perfil autenticado com `GET /users/me`.
 - Implementação de RBAC com `Role`, `@Roles` e `RolesGuard`.
+- Implementação global de `LoggingInterceptor`, `TransformInterceptor` e `GlobalExceptionFilter`.
 - Adoção de Repository Pattern (`domain/repositories` + implementações Prisma).
 - Validação de data futura com `@IsFutureDate`.
 - JWT com Passport e `@CurrentUser` para contexto autenticado.

@@ -7,8 +7,6 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 ## [Unreleased]
 
 ### Planejado
-- Interceptores globais (`LoggingInterceptor`, `TransformInterceptor`).
-- `GlobalExceptionFilter` com mapeamento de erros Prisma/validação.
 - Testes E2E dos fluxos de autenticação e usuários.
 
 ### Adicionado
@@ -20,6 +18,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - RBAC com `Role`, `@Roles` e `RolesGuard`.
 - Repositório de usuários (`IUserRepository`) com implementação Prisma.
 - Compatibilidade de login com hash bcrypt e fallback legado em texto plano.
+- `LoggingInterceptor` global com auditoria de request/response.
+- `TransformInterceptor` global com envelope `{ data, meta }`.
+- `GlobalExceptionFilter` global com mapeamento de erro HTTP/Prisma.
 
 ## [2026-02-22]
 

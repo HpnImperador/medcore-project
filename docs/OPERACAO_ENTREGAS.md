@@ -33,3 +33,22 @@ chore(entrega): YYYY-MM-DD HH:MM | <escopo>
 - O script só cria commit se houver alterações no `git status`.
 - Se não houver mudanças, ele encerra sem erro.
 - `git push` depende de remote e credenciais já configuradas no servidor.
+
+## Bateria de Testes de API
+Arquivo: `scripts/bateria_api_backend.sh`
+
+Uso mínimo (disponibilidade + swagger):
+```bash
+./scripts/bateria_api_backend.sh
+```
+
+Uso completo (auth + users + appointments):
+```bash
+BASE_URL=http://127.0.0.1:3000 \
+TEST_EMAIL=medico@medcore.com \
+TEST_PASSWORD=123456 \
+TEST_BRANCH_ID=<branch_uuid> \
+TEST_PATIENT_ID=<patient_uuid> \
+TEST_DOCTOR_ID=<doctor_uuid> \
+./scripts/bateria_api_backend.sh
+```

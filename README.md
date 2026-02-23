@@ -40,6 +40,11 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Swagger configurado com bearer token JWT.
 - Acesse: `http://localhost:3000/api` (ou `http://192.168.0.109:3000/api`).
 
+### Interceptors e Exception Filter
+- `LoggingInterceptor` global para auditoria de método, rota, status, duração, ator e IP.
+- `TransformInterceptor` global com envelope padrão `{ data, meta }`.
+- `GlobalExceptionFilter` global com tratamento de `HttpException` e erros conhecidos do Prisma.
+
 ### Validação Customizada
 - **@IsFutureDate**: decorador customizado para impedir agendamentos no passado.
 - Integrado ao `ValidationPipe` global (`whitelist: true`, `transform: true`).
@@ -53,9 +58,6 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 
 ## 📌 Status dos Itens Arquiteturais (Roteiro)
 Itens mencionados como diretriz e que devem permanecer no roadmap de evolução:
-- `LoggingInterceptor` (auditoria/performance)
-- `TransformInterceptor` (envelope `{ data, meta }`)
-- `GlobalExceptionFilter` (mapeamento de erros)
 - Testes E2E dedicados para autenticação/usuário
 
 Observação: este README será mantido incrementalmente para refletir exatamente o que está implementado em cada etapa.
