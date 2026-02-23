@@ -7,6 +7,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - CI backend: `../.github/workflows/backend-ci.yml`
 - Publicação automática de entrega grande: `../scripts/push_grande_entrega.sh` (com retry DNS e validação de `ssh-agent`).
 - Backup de banco em `../backup` com script `../scripts/backup_db_medcore.sh`, restore controlado via `../scripts/restore_db_medcore.sh`, backup diário às 14:00 e teste semanal de restore (domingo 14:30).
+- Monitor operacional de backup/restore: `../scripts/monitor_backup_status.sh`.
 
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.

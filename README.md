@@ -38,6 +38,12 @@ ssh-add ~/.ssh/id_ed25519
 ```cron
 30 14 * * 0 /home/sppro/medcore-project/scripts/validar_restore_backup.sh >> /home/sppro/medcore-project/backup/restore_check_cron.log 2>&1
 ```
+- Monitor de saúde dos backups: `scripts/monitor_backup_status.sh`
+- Exemplo:
+```bash
+cd /home/sppro/medcore-project
+./scripts/monitor_backup_status.sh
+```
 - Script de restore controlado: `scripts/restore_db_medcore.sh`
 - Teste operacional de restore (base temporária): `scripts/validar_restore_backup.sh`
 - Exemplo de restore (destrutivo):

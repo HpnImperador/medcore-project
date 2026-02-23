@@ -40,3 +40,9 @@ Validação automática sem risco para a base principal (usa base temporária):
 cd /home/sppro/medcore-project
 ./scripts/validar_restore_backup.sh
 ```
+
+## Monitoramento
+```bash
+cd /home/sppro/medcore-project
+./scripts/monitor_backup_status.sh
+```
