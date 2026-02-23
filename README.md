@@ -265,6 +265,7 @@ Cobertura atual da bateria:
 
 Variáveis úteis da bateria:
 - `ENABLE_BRUTE_FORCE_CHECK` (default `1`)
+- `ENABLE_OUTBOX_CLEANUP_CHECK` (default `1`)
 - `LOGIN_MAX_FAILED_ATTEMPTS` (default `5`)
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` (valida endpoints admin de lock + operação Outbox quando informados)
 - `BRUTE_FORCE_TEST_IP` (default `198.51.100.10`)

@@ -202,6 +202,7 @@ Script de smoke para validar integração HTTP ponta a ponta:
 - Se `ADMIN_EMAIL` e `ADMIN_PASSWORD` estiverem disponíveis, valida também:
   - `GET /auth/login-lock`
   - `POST /auth/login-lock/clear`
+- `ENABLE_OUTBOX_CLEANUP_CHECK=1` habilita validação do fluxo admin de cleanup/auditoria do Outbox dentro da bateria.
 
 Teste operacional focado no cleanup do Outbox:
 - Arquivo: `../scripts/testar_outbox_cleanup.sh`

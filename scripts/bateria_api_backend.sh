@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SEED_ENV_FILE="${SEED_ENV_FILE:-$REPO_ROOT/backend/.seed.env}"
 ENABLE_BRUTE_FORCE_CHECK="${ENABLE_BRUTE_FORCE_CHECK:-1}"
+ENABLE_OUTBOX_CLEANUP_CHECK="${ENABLE_OUTBOX_CLEANUP_CHECK:-1}"
 LOGIN_MAX_FAILED_ATTEMPTS="${LOGIN_MAX_FAILED_ATTEMPTS:-5}"
 BRUTE_FORCE_TEST_IP="${BRUTE_FORCE_TEST_IP:-198.51.100.10}"
 
@@ -250,24 +251,28 @@ JSON
       fail "GET /outbox/replay-audit falhou (HTTP $CODE)."
     fi
 
-    CLEANUP_PAYLOAD=$(cat <<JSON
+    if [[ "$ENABLE_OUTBOX_CLEANUP_CHECK" == "1" ]]; then
+      CLEANUP_PAYLOAD=$(cat <<JSON
 {"retention_days":30,"include_failed":false,"dry_run":true}
 JSON
 )
-    CODE=$(http_code POST "$BASE_URL/outbox/cleanup" \
-      -H "Authorization: Bearer $ADMIN_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d "$CLEANUP_PAYLOAD")
-    if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
-      cat /tmp/medcore_bateria_body.json
-      fail "POST /outbox/cleanup falhou (HTTP $CODE)."
-    fi
+      CODE=$(http_code POST "$BASE_URL/outbox/cleanup" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "$CLEANUP_PAYLOAD")
+      if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+        cat /tmp/medcore_bateria_body.json
+        fail "POST /outbox/cleanup falhou (HTTP $CODE)."
+      fi
 
-    CODE=$(http_code GET "$BASE_URL/outbox/maintenance-audit?limit=5" \
-      -H "Authorization: Bearer $ADMIN_TOKEN")
-    if [[ "$CODE" != "200" ]]; then
-      cat /tmp/medcore_bateria_body.json
-      fail "GET /outbox/maintenance-audit falhou (HTTP $CODE)."
+      CODE=$(http_code GET "$BASE_URL/outbox/maintenance-audit?limit=5" \
+        -H "Authorization: Bearer $ADMIN_TOKEN")
+      if [[ "$CODE" != "200" ]]; then
+        cat /tmp/medcore_bateria_body.json
+        fail "GET /outbox/maintenance-audit falhou (HTTP $CODE)."
+      fi
+    else
+      warn "ENABLE_OUTBOX_CLEANUP_CHECK=0. Pulando validação de cleanup/maintenance-audit."
     fi
 
     ok "Endpoints admin de lock/login e operacao Outbox validados."
