@@ -43,7 +43,16 @@ export class LoggingInterceptor implements NestInterceptor {
         const statusCode = response.statusCode ?? 200;
 
         this.logger.log(
-          `[${method}] ${path} ${statusCode} ${durationMs}ms | actor=${actor} | ip=${ip}`,
+          JSON.stringify({
+            event: 'http_request_completed',
+            method,
+            path,
+            status_code: statusCode,
+            duration_ms: durationMs,
+            actor,
+            ip,
+            timestamp: new Date().toISOString(),
+          }),
         );
       }),
     );

@@ -48,4 +48,16 @@ export class HealthController {
   metrics() {
     return this.healthService.getMetrics();
   }
+
+  @Get('alert-check')
+  @ApiOperation({
+    summary:
+      'Executa healthcheck consolidado e dispara alerta se status estiver degraded/error',
+  })
+  @ApiOkResponse({
+    description: 'Verificação de alerta operacional executada com sucesso.',
+  })
+  async alertCheck() {
+    return this.healthService.checkAndNotify();
+  }
 }

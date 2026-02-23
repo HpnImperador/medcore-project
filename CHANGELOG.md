@@ -49,6 +49,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Bateria API ampliada para validar health endpoints.
 - Pipeline CI do backend adicionado em `.github/workflows/backend-ci.yml` com PostgreSQL de serviço, `prisma:deploy`, `prisma:seed`, `lint`, `build` e bateria API.
 - `scripts/bateria_api_backend.sh` ajustado para usar caminho relativo do repositório ao carregar `backend/.seed.env`.
+- Alertas operacionais adicionados com endpoint `GET /health/alert-check` e serviço de notificação por webhook (`HEALTH_ALERT_WEBHOOK_URL`) com cooldown (`HEALTH_ALERT_COOLDOWN_MINUTES`).
+- Logging HTTP migrado para formato JSON estruturado no `LoggingInterceptor`.
+- Bateria API ampliada para validar `GET /health/alert-check`.
 
 ## [2026-02-22]
 

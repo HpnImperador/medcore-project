@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { N8nWebhookService } from '../integrations/n8n/n8n-webhook.service';
+import { HealthAlertService } from './health-alert.service';
 
 type HealthStatus = 'ok' | 'degraded' | 'error';
 
@@ -9,6 +10,7 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly n8nWebhookService: N8nWebhookService,
+    private readonly healthAlertService: HealthAlertService,
   ) {}
 
   async checkDatabase() {
@@ -62,6 +64,16 @@ export class HealthService {
         n8n,
       },
       timestamp: new Date().toISOString(),
+    };
+  }
+
+  async checkAndNotify() {
+    const summary = await this.getHealthSummary();
+    const alert = await this.healthAlertService.notifyIfNeeded(summary);
+
+    return {
+      ...summary,
+      alert,
     };
   }
 

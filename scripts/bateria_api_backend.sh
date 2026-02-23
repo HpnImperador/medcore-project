@@ -82,6 +82,13 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Health metrics validado."
 
+CODE=$(http_code GET "$BASE_URL/health/alert-check")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /health/alert-check falhou (HTTP $CODE)."
+fi
+ok "Health alert-check validado."
+
 if [[ -z "$TEST_EMAIL" || -z "$TEST_PASSWORD" ]]; then
   warn "TEST_EMAIL/TEST_PASSWORD não informados. Pulando testes autenticados."
   echo "Bateria finalizada parcialmente."

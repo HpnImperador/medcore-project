@@ -100,6 +100,8 @@ WHERE email = 'medico@medcore.com';
 - `GET /health/db`: teste de conectividade com PostgreSQL.
 - `GET /health/n8n`: teste de conectividade do webhook n8n.
 - `GET /health/metrics`: uptime e uso de memória do processo.
+- `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
+- Logs HTTP emitidos em JSON estruturado (`event=http_request_completed`).
 
 ## 🧪 Checks de Qualidade
 ```bash
