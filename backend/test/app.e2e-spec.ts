@@ -12,6 +12,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 
 interface LoginData {
   access_token: string;
+  refresh_token: string;
   token_type: string;
   user: {
     id: string;
@@ -87,6 +88,18 @@ describe('MedCore API (e2e)', () => {
     notes: string | null;
     created_at: Date;
     updated_at: Date;
+  }> = [];
+
+  const refreshTokensStore: Array<{
+    id: string;
+    token_hash: string;
+    user_id: string;
+    organization_id: string;
+    expires_at: Date;
+    revoked_at: Date | null;
+    last_used_at: Date | null;
+    replaced_by_token_id: string | null;
+    created_at: Date;
   }> = [];
 
   const mockPatientsRepository = {
@@ -182,6 +195,63 @@ describe('MedCore API (e2e)', () => {
     ),
   };
 
+  const mockRefreshTokensRepository = {
+    create: jest.fn((input: {
+      user_id: string;
+      organization_id: string;
+      token_hash: string;
+      expires_at: Date;
+    }) => {
+      const entity = {
+        id: `rt-${refreshTokensStore.length + 1}`,
+        user_id: input.user_id,
+        organization_id: input.organization_id,
+        token_hash: input.token_hash,
+        expires_at: input.expires_at,
+        created_at: new Date(),
+        revoked_at: null,
+        last_used_at: null,
+        replaced_by_token_id: null,
+      };
+      refreshTokensStore.push(entity);
+      return Promise.resolve(entity);
+    }),
+    findActiveByHash: jest.fn((tokenHash: string) => {
+      const found = refreshTokensStore.find(
+        (item) =>
+          item.token_hash === tokenHash &&
+          item.revoked_at === null &&
+          item.expires_at > new Date(),
+      );
+      return Promise.resolve(found ?? null);
+    }),
+    revokeById: jest.fn((tokenId: string, replacedByTokenId?: string) => {
+      const found = refreshTokensStore.find((item) => item.id === tokenId);
+      if (found) {
+        found.revoked_at = new Date();
+        found.last_used_at = new Date();
+        found.replaced_by_token_id = replacedByTokenId ?? null;
+      }
+      return Promise.resolve();
+    }),
+    touchUsage: jest.fn((tokenId: string) => {
+      const found = refreshTokensStore.find((item) => item.id === tokenId);
+      if (found) {
+        found.last_used_at = new Date();
+      }
+      return Promise.resolve();
+    }),
+    revokeByHash: jest.fn((tokenHash: string) => {
+      refreshTokensStore.forEach((item) => {
+        if (item.token_hash === tokenHash && item.revoked_at === null) {
+          item.revoked_at = new Date();
+          item.last_used_at = new Date();
+        }
+      });
+      return Promise.resolve();
+    }),
+  };
+
   beforeAll(async () => {
     mockN8n = {
       notifyAppointmentCompleted: jest.fn().mockResolvedValue(undefined),
@@ -201,6 +271,8 @@ describe('MedCore API (e2e)', () => {
       .useValue(mockPatientsRepository)
       .overrideProvider(REPOSITORY_TOKENS.APPOINTMENTS)
       .useValue(mockAppointmentsRepository)
+      .overrideProvider(REPOSITORY_TOKENS.REFRESH_TOKENS)
+      .useValue(mockRefreshTokensRepository)
       .overrideProvider(N8nWebhookService)
       .useValue(mockN8n)
       .compile();
@@ -243,8 +315,37 @@ describe('MedCore API (e2e)', () => {
 
     const login = dataOf<LoginData>(response);
     expect(login.access_token).toBeDefined();
+    expect(login.refresh_token).toBeDefined();
     expect(login.user.email).toBe('medico@medcore.com');
     expect(login.user.role).toBe('DOCTOR');
+  });
+
+  it('deve rotacionar refresh token em /auth/refresh', async () => {
+    const loginResponse = await request(baseUrl)
+      .post('/auth/login')
+      .send({
+        email: 'medico@medcore.com',
+        password: '123456',
+      })
+      .expect(201);
+
+    const login = dataOf<LoginData>(loginResponse);
+
+    const response = await request(baseUrl)
+      .post('/auth/refresh')
+      .send({
+        refresh_token: login.refresh_token,
+      })
+      .expect(201);
+
+    const refreshed = dataOf<{
+      access_token: string;
+      refresh_token: string;
+      token_type: string;
+    }>(response);
+    expect(refreshed.access_token).toBeDefined();
+    expect(refreshed.refresh_token).toBeDefined();
+    expect(refreshed.refresh_token).not.toBe(login.refresh_token);
   });
 
   it('deve retornar 401 para login inválido', async () => {

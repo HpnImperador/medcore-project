@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaUsersRepository } from '../infra/repositories/prisma-users.repository';
+import { PrismaRefreshTokensRepository } from '../infra/repositories/prisma-refresh-tokens.repository';
 import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
 
 @Module({
@@ -24,6 +25,10 @@ import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
     {
       provide: REPOSITORY_TOKENS.USERS,
       useClass: PrismaUsersRepository,
+    },
+    {
+      provide: REPOSITORY_TOKENS.REFRESH_TOKENS,
+      useClass: PrismaRefreshTokensRepository,
     },
   ],
   exports: [JwtModule],
