@@ -10,6 +10,8 @@ TEST_DOCTOR_ID="${TEST_DOCTOR_ID:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SEED_ENV_FILE="${SEED_ENV_FILE:-$REPO_ROOT/backend/.seed.env}"
+ENABLE_BRUTE_FORCE_CHECK="${ENABLE_BRUTE_FORCE_CHECK:-1}"
+LOGIN_MAX_FAILED_ATTEMPTS="${LOGIN_MAX_FAILED_ATTEMPTS:-5}"
 
 INPUT_TEST_EMAIL="$TEST_EMAIL"
 INPUT_TEST_PASSWORD="$TEST_PASSWORD"
@@ -93,6 +95,36 @@ if [[ -z "$TEST_EMAIL" || -z "$TEST_PASSWORD" ]]; then
   warn "TEST_EMAIL/TEST_PASSWORD não informados. Pulando testes autenticados."
   echo "Bateria finalizada parcialmente."
   exit 0
+fi
+
+if [[ "$ENABLE_BRUTE_FORCE_CHECK" == "1" ]]; then
+  BRUTE_TEST_EMAIL="bruteforce+$(date +%s)@medcore.local"
+  BRUTE_TEST_PASSWORD="senha-invalida"
+  LAST_ATTEMPT=$((LOGIN_MAX_FAILED_ATTEMPTS + 1))
+
+  for attempt in $(seq 1 "$LAST_ATTEMPT"); do
+    BRUTE_PAYLOAD=$(cat <<JSON
+{"email":"$BRUTE_TEST_EMAIL","password":"$BRUTE_TEST_PASSWORD"}
+JSON
+)
+    CODE=$(http_code POST "$BASE_URL/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "$BRUTE_PAYLOAD")
+
+    if [[ "$attempt" -le "$LOGIN_MAX_FAILED_ATTEMPTS" ]]; then
+      if [[ "$CODE" != "401" ]]; then
+        cat /tmp/medcore_bateria_body.json
+        fail "Brute force check falhou na tentativa $attempt (esperado 401, recebido $CODE)."
+      fi
+      continue
+    fi
+
+    if [[ "$CODE" != "429" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "Brute force check falhou no bloqueio (esperado 429, recebido $CODE)."
+    fi
+  done
+  ok "Proteção de brute force validada (401 até limite + 429 no bloqueio)."
 fi
 
 LOGIN_PAYLOAD=$(cat <<JSON

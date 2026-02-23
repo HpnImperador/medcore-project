@@ -57,6 +57,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `AUTH_MAX_FAILED_ATTEMPTS`
   - `AUTH_ATTEMPT_WINDOW_MINUTES`
   - `AUTH_LOCK_MINUTES`
+- Bateria API ampliada para validar brute force no login (`401` até limite configurado + `429` no bloqueio).
 
 ## [2026-02-22]
 

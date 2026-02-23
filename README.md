@@ -158,6 +158,7 @@ Cobertura atual da bateria:
 - `GET /health/db`
 - `GET /health/metrics`
 - `GET /health/alert-check`
+- proteção de brute force em login (`401` até limite e `429` ao bloquear)
 - `POST /auth/login`
 - `GET /users/me`
 - `POST /auth/refresh`
@@ -169,6 +170,10 @@ Cobertura atual da bateria:
 - `PATCH /appointments/:id/complete`
 - `PATCH /appointments/:id/reschedule`
 - `PATCH /appointments/:id/cancel`
+
+Variáveis úteis da bateria:
+- `ENABLE_BRUTE_FORCE_CHECK` (default `1`)
+- `LOGIN_MAX_FAILED_ATTEMPTS` (default `5`)
 
 ## 🛠️ Setup e Execução
 ```bash
