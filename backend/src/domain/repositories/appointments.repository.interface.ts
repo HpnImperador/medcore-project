@@ -52,8 +52,21 @@ export interface UpdateAppointmentRepositoryInput {
   notes?: string | null;
 }
 
+export interface AppointmentOutboxInput {
+  event_name:
+    | 'appointment.created'
+    | 'appointment.completed'
+    | 'appointment.canceled'
+    | 'appointment.rescheduled';
+  correlation_id: string;
+  triggered_by_user_id?: string | null;
+}
+
 export interface IAppointmentsRepository {
-  create(input: CreateAppointmentRepositoryInput): Promise<AppointmentEntity>;
+  create(
+    input: CreateAppointmentRepositoryInput,
+    outbox?: AppointmentOutboxInput,
+  ): Promise<AppointmentEntity>;
   hasDoctorScheduleConflict(
     organizationId: string,
     doctorId: string,
@@ -82,11 +95,13 @@ export interface IAppointmentsRepository {
     organizationId: string,
     branchIds: string[],
     input: UpdateAppointmentRepositoryInput,
+    outbox?: AppointmentOutboxInput,
   ): Promise<AppointmentEntity | null>;
   completeByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,
     branchIds: string[],
+    outbox?: AppointmentOutboxInput,
   ): Promise<AppointmentEntity | null>;
   findDoctorByIdAndOrganization(
     doctorId: string,

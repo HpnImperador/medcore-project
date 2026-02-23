@@ -86,9 +86,10 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
   - Slots disponíveis respeitam janela de pausa configurável (ex.: almoço).
   - Slots disponíveis respeitam agenda semanal do médico quando configurada em `doctor_schedules`.
   - Se não houver agenda semanal ativa para o dia, o sistema aplica fallback para variáveis globais da agenda.
+  - Eventos de agendamento agora são persistidos em Outbox transacional (`domain_outbox_events`) no mesmo commit do caso de uso.
 
 ### Webhook n8n
-- Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
+- Webhook de eventos de agendamento é disparado de forma assíncrona via processador de Outbox (não bloqueia request HTTP).
 - Variável utilizada: `N8N_APPOINTMENTS_WEBHOOK_URL`.
 
 ### Documentação (Swagger)
@@ -146,6 +147,7 @@ Observação: este README será mantido incrementalmente para refletir exatament
 - `patients`
 - `appointments`
 - `doctor_schedules`
+- `domain_outbox_events`
 
 ## 🔐 Payload JWT Esperado
 Campos mínimos no token:
@@ -180,6 +182,9 @@ Exemplo:
 - `APPOINTMENT_BREAK_START_HOUR`
 - `APPOINTMENT_BREAK_END_HOUR`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
+- `OUTBOX_POLL_INTERVAL_MS`
+- `OUTBOX_BATCH_SIZE`
+- `OUTBOX_MAX_ATTEMPTS`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
 

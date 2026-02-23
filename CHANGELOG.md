@@ -87,6 +87,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Agendamento semanal do teste operacional de restore adicionado no servidor (domingo às 14:30) com log em `backup/restore_check_cron.log`.
 - Script `scripts/monitor_backup_status.sh` adicionado para monitorar idade do último backup e último teste de restore, com códigos de saída para automação.
 - Documento de integração técnica ProformaFarmERP -> MedCore adicionado em `docs/INTEGRACAO_PROFORMAFARM_MEDCORE.md`, com matriz adotar/adaptar e roadmap de 60 dias (Outbox + Guardian + governança).
+- Outbox transacional implementado para eventos de `appointments`, com tabela `domain_outbox_events` e migration dedicada.
+- Processador assíncrono de Outbox adicionado para entrega de eventos de agendamento ao n8n com retry por tentativas.
+- Fluxos `create`, `complete`, `cancel` e `reschedule` de agendamento migrados para gravação de evento no Outbox na mesma transação do write.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).

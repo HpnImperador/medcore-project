@@ -24,7 +24,8 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Validação de data futura com `@IsFutureDate`.
 - JWT com Passport e `@CurrentUser` para contexto autenticado.
 - Swagger com autenticação Bearer JWT.
-- Webhook assíncrono para n8n ao concluir agendamento.
+- Outbox transacional para eventos de agendamento (`domain_outbox_events`).
+- Processador assíncrono de Outbox para entrega de eventos ao n8n.
 - Healthchecks e métricas básicas de processo (`/health/*`).
 
 ## 🧱 Stack
@@ -39,6 +40,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - `users`
 - `patients`
 - `appointments`
+- `outbox`
 - `prisma`
 - `common` (auth, guards, decorators, strategy)
 - `integrations` (n8n)
@@ -58,6 +60,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Slots desconsideram horários passados (no dia atual) e respeitam pausa configurável de agenda.
 - Slots respeitam agenda semanal ativa por médico (`doctor_schedules`) quando configurada.
 - Na ausência de agenda semanal para o dia, o cálculo usa fallback por variáveis globais (`APPOINTMENT_WORKDAY_*` e `APPOINTMENT_BREAK_*`).
+- Eventos de agendamento persistidos em Outbox na mesma transação do write principal.
 - Endpoint administrativo para inspeção e limpeza de lock de login:
   - `GET /auth/login-lock` (ADMIN)
   - `POST /auth/login-lock/clear` (ADMIN)

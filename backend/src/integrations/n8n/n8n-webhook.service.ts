@@ -55,6 +55,12 @@ export class N8nWebhookService {
   async notifyAppointmentCompleted(
     payload: Record<string, unknown>,
   ): Promise<void> {
+    await this.notifyAppointmentEvent(payload);
+  }
+
+  async notifyAppointmentEvent(
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     const url = this.configService.get<string>('N8N_APPOINTMENTS_WEBHOOK_URL');
 
     if (!url) {

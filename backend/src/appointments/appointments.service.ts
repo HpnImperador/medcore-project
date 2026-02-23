@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import type {
   AppointmentEntity,
   DoctorScheduleEntity,
@@ -19,7 +20,6 @@ import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { GetAvailableSlotsQueryDto } from './dto/get-available-slots-query.dto';
-import { N8nWebhookService } from '../integrations/n8n/n8n-webhook.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -28,7 +28,6 @@ export class AppointmentsService {
     private readonly appointmentsRepository: IAppointmentsRepository,
     @Inject(REPOSITORY_TOKENS.PATIENTS)
     private readonly patientsRepository: IPatientsRepository,
-    private readonly n8nWebhookService: N8nWebhookService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -94,15 +93,18 @@ export class AppointmentsService {
       dto.scheduled_at,
     );
 
-    const appointment = await this.appointmentsRepository.create({
-      organization_id: currentUser.organizationId,
-      branch_id: dto.branch_id,
-      patient_id: dto.patient_id,
-      doctor_id: dto.doctor_id,
-      scheduled_at: dto.scheduled_at,
-      status: 'SCHEDULED',
-      notes: dto.notes,
-    });
+    const appointment = await this.appointmentsRepository.create(
+      {
+        organization_id: currentUser.organizationId,
+        branch_id: dto.branch_id,
+        patient_id: dto.patient_id,
+        doctor_id: dto.doctor_id,
+        scheduled_at: dto.scheduled_at,
+        status: 'SCHEDULED',
+        notes: dto.notes,
+      },
+      this.buildOutboxInput('appointment.created', currentUser.userId),
+    );
 
     return appointment;
   }
@@ -116,6 +118,7 @@ export class AppointmentsService {
         appointmentId,
         currentUser.organizationId,
         currentUser.branchIds,
+        this.buildOutboxInput('appointment.completed', currentUser.userId),
       );
 
     if (!appointment) {
@@ -123,14 +126,6 @@ export class AppointmentsService {
         'Agendamento não encontrado para a organização/filiais permitidas.',
       );
     }
-
-    void this.n8nWebhookService.notifyAppointmentCompleted({
-      event: 'appointment.completed',
-      timestamp: new Date().toISOString(),
-      organization_id: appointment.organization_id,
-      branch_id: appointment.branch_id,
-      appointment,
-    });
 
     return appointment;
   }
@@ -162,6 +157,7 @@ export class AppointmentsService {
           status: 'CANCELED',
           notes: mergedNotes,
         },
+        this.buildOutboxInput('appointment.canceled', currentUser.userId),
       );
 
     if (!updated) {
@@ -211,6 +207,7 @@ export class AppointmentsService {
           scheduled_at: dto.scheduled_at,
           notes: mergedNotes,
         },
+        this.buildOutboxInput('appointment.rescheduled', currentUser.userId),
       );
 
     if (!updated) {
@@ -577,5 +574,28 @@ export class AppointmentsService {
       a.getUTCMonth() === b.getUTCMonth() &&
       a.getUTCDate() === b.getUTCDate()
     );
+  }
+
+  private buildOutboxInput(
+    eventName:
+      | 'appointment.created'
+      | 'appointment.completed'
+      | 'appointment.canceled'
+      | 'appointment.rescheduled',
+    userId: string,
+  ): {
+    event_name:
+      | 'appointment.created'
+      | 'appointment.completed'
+      | 'appointment.canceled'
+      | 'appointment.rescheduled';
+    correlation_id: string;
+    triggered_by_user_id: string;
+  } {
+    return {
+      event_name: eventName,
+      correlation_id: randomUUID(),
+      triggered_by_user_id: userId,
+    };
   }
 }

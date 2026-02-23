@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   AppointmentEntity,
+  AppointmentOutboxInput,
   CreateAppointmentRepositoryInput,
   DoctorEntity,
   DoctorScheduleEntity,
@@ -69,21 +70,50 @@ interface PrismaWithAppointments {
   appointments: AppointmentsDelegate;
 }
 
+interface PrismaSqlExecutor {
+  $executeRaw<T = unknown>(
+    query: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<T>;
+}
+
 @Injectable()
 export class PrismaAppointmentsRepository implements IAppointmentsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(input: CreateAppointmentRepositoryInput): Promise<AppointmentEntity> {
-    return this.appointmentsDelegate.create({
-      data: {
-        organization_id: input.organization_id,
-        branch_id: input.branch_id,
-        patient_id: input.patient_id,
-        doctor_id: input.doctor_id,
-        scheduled_at: input.scheduled_at,
-        status: input.status,
-        notes: input.notes,
-      },
+  async create(
+    input: CreateAppointmentRepositoryInput,
+    outbox?: AppointmentOutboxInput,
+  ): Promise<AppointmentEntity> {
+    if (!outbox) {
+      return this.appointmentsDelegate.create({
+        data: {
+          organization_id: input.organization_id,
+          branch_id: input.branch_id,
+          patient_id: input.patient_id,
+          doctor_id: input.doctor_id,
+          scheduled_at: input.scheduled_at,
+          status: input.status,
+          notes: input.notes,
+        },
+      });
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const delegate = this.getAppointmentsDelegate(tx);
+      const appointment = await delegate.create({
+        data: {
+          organization_id: input.organization_id,
+          branch_id: input.branch_id,
+          patient_id: input.patient_id,
+          doctor_id: input.doctor_id,
+          scheduled_at: input.scheduled_at,
+          status: input.status,
+          notes: input.notes,
+        },
+      });
+      await this.insertOutboxEvent(tx, appointment, outbox);
+      return appointment;
     });
   }
 
@@ -169,31 +199,64 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
     appointmentId: string,
     organizationId: string,
     branchIds: string[],
+    outbox?: AppointmentOutboxInput,
   ): Promise<AppointmentEntity | null> {
     if (branchIds.length === 0) {
       return null;
     }
 
-    const updated = await this.appointmentsDelegate.updateMany({
-      where: {
-        id: appointmentId,
-        organization_id: organizationId,
-        branch_id: { in: branchIds },
-      },
-      data: {
-        status: 'COMPLETED',
-      },
-    });
+    if (!outbox) {
+      const updated = await this.appointmentsDelegate.updateMany({
+        where: {
+          id: appointmentId,
+          organization_id: organizationId,
+          branch_id: { in: branchIds },
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
 
-    if (updated.count === 0) {
-      return null;
+      if (updated.count === 0) {
+        return null;
+      }
+
+      return this.appointmentsDelegate.findFirst({
+        where: {
+          id: appointmentId,
+          organization_id: organizationId,
+        },
+      });
     }
 
-    return this.appointmentsDelegate.findFirst({
-      where: {
-        id: appointmentId,
-        organization_id: organizationId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const delegate = this.getAppointmentsDelegate(tx);
+      const updated = await delegate.updateMany({
+        where: {
+          id: appointmentId,
+          organization_id: organizationId,
+          branch_id: { in: branchIds },
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+      if (updated.count === 0) {
+        return null;
+      }
+
+      const appointment = await delegate.findFirst({
+        where: {
+          id: appointmentId,
+          organization_id: organizationId,
+        },
+      });
+      if (!appointment) {
+        return null;
+      }
+
+      await this.insertOutboxEvent(tx, appointment, outbox);
+      return appointment;
     });
   }
 
@@ -220,26 +283,56 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
     organizationId: string,
     branchIds: string[],
     input: UpdateAppointmentRepositoryInput,
+    outbox?: AppointmentOutboxInput,
   ): Promise<AppointmentEntity | null> {
-    const existing = await this.findByIdInOrganizationAndBranches(
-      appointmentId,
-      organizationId,
-      branchIds,
-    );
+    if (!outbox) {
+      const existing = await this.findByIdInOrganizationAndBranches(
+        appointmentId,
+        organizationId,
+        branchIds,
+      );
 
-    if (!existing) {
-      return null;
+      if (!existing) {
+        return null;
+      }
+
+      return this.appointmentsDelegate.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          ...(input.status ? { status: input.status } : {}),
+          ...(input.scheduled_at ? { scheduled_at: input.scheduled_at } : {}),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+        },
+      });
     }
 
-    return this.appointmentsDelegate.update({
-      where: {
-        id: appointmentId,
-      },
-      data: {
-        ...(input.status ? { status: input.status } : {}),
-        ...(input.scheduled_at ? { scheduled_at: input.scheduled_at } : {}),
-        ...(input.notes !== undefined ? { notes: input.notes } : {}),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const delegate = this.getAppointmentsDelegate(tx);
+      const existing = await delegate.findFirst({
+        where: {
+          id: appointmentId,
+          organization_id: organizationId,
+          branch_id: { in: branchIds },
+        },
+      });
+      if (!existing) {
+        return null;
+      }
+
+      const updated = await delegate.update({
+        where: {
+          id: appointmentId,
+        },
+        data: {
+          ...(input.status ? { status: input.status } : {}),
+          ...(input.scheduled_at ? { scheduled_at: input.scheduled_at } : {}),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+        },
+      });
+      await this.insertOutboxEvent(tx, updated, outbox);
+      return updated;
     });
   }
 
@@ -319,5 +412,44 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
 
   private get appointmentsDelegate() {
     return (this.prisma as unknown as PrismaWithAppointments).appointments;
+  }
+
+  private getAppointmentsDelegate(client: unknown): AppointmentsDelegate {
+    return (client as PrismaWithAppointments).appointments;
+  }
+
+  private async insertOutboxEvent(
+    executor: unknown,
+    appointment: AppointmentEntity,
+    outbox: AppointmentOutboxInput,
+  ): Promise<void> {
+    const payload = {
+      event: outbox.event_name,
+      timestamp: new Date().toISOString(),
+      organization_id: appointment.organization_id,
+      branch_id: appointment.branch_id,
+      appointment,
+    };
+
+    await (executor as PrismaSqlExecutor).$executeRaw`
+      INSERT INTO domain_outbox_events (
+        organization_id,
+        event_name,
+        payload,
+        status,
+        attempts,
+        correlation_id,
+        triggered_by_user_id
+      )
+      VALUES (
+        ${appointment.organization_id}::uuid,
+        ${outbox.event_name},
+        ${JSON.stringify(payload)}::jsonb,
+        'PENDING',
+        0,
+        ${outbox.correlation_id},
+        ${outbox.triggered_by_user_id ?? null}::uuid
+      )
+    `;
   }
 }
