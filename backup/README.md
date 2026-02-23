@@ -29,3 +29,10 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
 
 Observação:
 - O restore recria o schema `public` e substitui os dados atuais.
+
+## Teste Operacional de Restore
+Validação automática sem risco para a base principal (usa base temporária):
+```bash
+cd /home/sppro/medcore-project
+./scripts/validar_restore_backup.sh
+```
