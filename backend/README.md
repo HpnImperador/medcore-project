@@ -67,6 +67,12 @@ npm run build
 npm run start:dev
 ```
 
+Subida segura (evita erro `EADDRINUSE` em 0.0.0.0:3000):
+```bash
+cd /home/sppro/medcore-project
+./scripts/start_backend_safe.sh
+```
+
 ## 🗃️ Prisma
 Schema oficial deste backend:
 - `backend/prisma/schema.prisma`

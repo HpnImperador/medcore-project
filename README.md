@@ -211,6 +211,12 @@ npm run build
 npm run start:dev
 ```
 
+Subida segura (evita erro `EADDRINUSE` na porta 3000):
+```bash
+cd /home/sppro/medcore-project
+./scripts/start_backend_safe.sh
+```
+
 ## 🗃️ Migrações Prisma
 ```bash
 cd backend
