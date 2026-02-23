@@ -45,6 +45,16 @@ extract_json_field() {
   node -e "const fs=require('fs');const body=JSON.parse(fs.readFileSync('/tmp/medcore_bateria_body.json','utf8'));const data=(body && typeof body==='object' && 'data' in body)?body.data:body;const v=(data && typeof data==='object')?data['$field']:undefined;console.log(v ?? '')"
 }
 
+extract_slot_by_index() {
+  local index="$1"
+  node -e "const fs=require('fs');const body=JSON.parse(fs.readFileSync('/tmp/medcore_bateria_body.json','utf8'));const data=(body && typeof body==='object' && 'data' in body)?body.data:body;const slots=Array.isArray(data?.slots)?data.slots:[];const i=Number(process.argv[1]);console.log(slots[i] ?? '')" "$index"
+}
+
+extract_first_slot_different_from() {
+  local excluded="$1"
+  node -e "const fs=require('fs');const body=JSON.parse(fs.readFileSync('/tmp/medcore_bateria_body.json','utf8'));const data=(body && typeof body==='object' && 'data' in body)?body.data:body;const slots=Array.isArray(data?.slots)?data.slots:[];const ex=process.argv[1];const found=slots.find((slot)=>slot!==ex);console.log(found ?? '')" "$excluded"
+}
+
 echo "== Bateria API MedCore =="
 echo "BASE_URL: $BASE_URL"
 
@@ -296,7 +306,20 @@ if [[ -z "$TEST_BRANCH_ID" || -z "$TEST_PATIENT_ID" || -z "$TEST_DOCTOR_ID" ]]; 
   exit 0
 fi
 
-SCHEDULED_AT=$(date -u -d '+2 hours' +"%Y-%m-%dT%H:%M:%S.000Z")
+SLOTS_DATE=$(date -u -d '+1 day' +"%Y-%m-%dT00:00:00.000Z")
+CODE=$(http_code GET "$BASE_URL/appointments/slots?branch_id=$TEST_BRANCH_ID&doctor_id=$TEST_DOCTOR_ID&date=$SLOTS_DATE" \
+  -H "Authorization: Bearer $NEW_TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /appointments/slots falhou (HTTP $CODE)."
+fi
+SCHEDULED_AT=$(extract_slot_by_index 0)
+if [[ -z "$SCHEDULED_AT" || "$SCHEDULED_AT" == "undefined" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "Nenhum slot disponível para criar o primeiro agendamento da bateria."
+fi
+ok "Consulta de slots disponíveis validada."
+
 CREATE_APPT_PAYLOAD=$(cat <<JSON
 {
   "branch_id": "$TEST_BRANCH_ID",
@@ -324,7 +347,7 @@ if [[ -z "$APPOINTMENT_ID" || "$APPOINTMENT_ID" == "undefined" ]]; then
 fi
 ok "Criação de agendamento validada (id=$APPOINTMENT_ID)."
 
-CONFLICT_SCHEDULED_AT=$(date -u -d '+2 hours 15 minutes' +"%Y-%m-%dT%H:%M:%S.000Z")
+CONFLICT_SCHEDULED_AT=$(date -u -d "$SCHEDULED_AT +15 minutes" +"%Y-%m-%dT%H:%M:%S.000Z")
 CONFLICT_APPT_PAYLOAD=$(cat <<JSON
 {
   "branch_id": "$TEST_BRANCH_ID",
@@ -354,15 +377,6 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Listagem de agendamentos validada."
 
-SLOTS_DATE=$(date -u -d '+1 day' +"%Y-%m-%dT00:00:00.000Z")
-CODE=$(http_code GET "$BASE_URL/appointments/slots?branch_id=$TEST_BRANCH_ID&doctor_id=$TEST_DOCTOR_ID&date=$SLOTS_DATE" \
-  -H "Authorization: Bearer $NEW_TOKEN")
-if [[ "$CODE" != "200" ]]; then
-  cat /tmp/medcore_bateria_body.json
-  fail "GET /appointments/slots falhou (HTTP $CODE)."
-fi
-ok "Consulta de slots disponíveis validada."
-
 CODE=$(http_code PATCH "$BASE_URL/appointments/$APPOINTMENT_ID/complete" \
   -H "Authorization: Bearer $NEW_TOKEN")
 if [[ "$CODE" != "200" ]]; then
@@ -371,7 +385,18 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Conclusão de agendamento validada."
 
-SCHEDULED_AT_2=$(date -u -d '+4 hours' +"%Y-%m-%dT%H:%M:%S.000Z")
+CODE=$(http_code GET "$BASE_URL/appointments/slots?branch_id=$TEST_BRANCH_ID&doctor_id=$TEST_DOCTOR_ID&date=$SLOTS_DATE" \
+  -H "Authorization: Bearer $NEW_TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /appointments/slots (2) falhou (HTTP $CODE)."
+fi
+SCHEDULED_AT_2=$(extract_first_slot_different_from "$SCHEDULED_AT")
+if [[ -z "$SCHEDULED_AT_2" || "$SCHEDULED_AT_2" == "undefined" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "Nenhum slot disponível para criar o segundo agendamento."
+fi
+
 CREATE_APPT_PAYLOAD_2=$(cat <<JSON
 {
   "branch_id": "$TEST_BRANCH_ID",
@@ -399,7 +424,17 @@ if [[ -z "$APPOINTMENT_ID_2" || "$APPOINTMENT_ID_2" == "undefined" ]]; then
 fi
 ok "Segundo agendamento criado para validar reagendamento/cancelamento (id=$APPOINTMENT_ID_2)."
 
-RESCHEDULED_AT=$(date -u -d '+6 hours' +"%Y-%m-%dT%H:%M:%S.000Z")
+CODE=$(http_code GET "$BASE_URL/appointments/slots?branch_id=$TEST_BRANCH_ID&doctor_id=$TEST_DOCTOR_ID&date=$SLOTS_DATE" \
+  -H "Authorization: Bearer $NEW_TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /appointments/slots (reschedule) falhou (HTTP $CODE)."
+fi
+RESCHEDULED_AT=$(extract_slot_by_index 0)
+if [[ -z "$RESCHEDULED_AT" || "$RESCHEDULED_AT" == "undefined" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "Nenhum slot disponível para validar o reagendamento."
+fi
 RESCHEDULE_PAYLOAD=$(cat <<JSON
 {
   "scheduled_at": "$RESCHEDULED_AT",
