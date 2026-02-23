@@ -36,6 +36,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - `POST /outbox/audit/cleanup` (retenção de auditorias com `dry_run`)
 - Limpeza automática do Outbox com retenção configurável, guarda de ambiente e auditoria (`OutboxMaintenanceService`).
 - Processador assíncrono de Outbox para entrega de eventos ao n8n.
+- Infra n8n isolada em banco dedicado (`n8n_db`) para evitar acoplamento de schema com `medcore_db`.
 - Healthchecks e métricas básicas de processo (`/health/*`).
 
 ## 🧱 Stack
@@ -160,6 +161,21 @@ WHERE email = 'medico@medcore.com';
 ## 📘 Documentação
 - Swagger: `http://localhost:3000/api`
 - Swagger (rede local): `http://192.168.0.109:3000/api`
+
+## 🔌 Operação n8n
+- URL de acesso: `http://192.168.0.109:5678`
+- Banco dedicado do n8n: `n8n_db` (definido em `docker-compose.yml`).
+- Em caso de reset inesperado de setup/owner:
+```bash
+cd /home/sppro/medcore-project
+docker compose stop n8n
+docker compose up -d n8n
+```
+- Em caso de erro de owner no setup:
+```bash
+docker exec -it medcore-n8n n8n user-management:reset
+docker compose restart n8n
+```
 
 ## 📈 Observabilidade
 - `GET /health`: status consolidado da API (DB + n8n).

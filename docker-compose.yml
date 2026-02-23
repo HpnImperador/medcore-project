@@ -30,7 +30,7 @@ services:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=alloydb
       - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=medcore_db
+      - DB_POSTGRESDB_DATABASE=n8n_db
       - DB_POSTGRESDB_USER=postgres
       - DB_POSTGRESDB_PASSWORD=medcore_root_2026
       - N8N_ENCRYPTION_KEY=medcore_secret_key

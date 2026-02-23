@@ -91,6 +91,23 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
 ### Webhook n8n
 - Webhook de eventos de agendamento é disparado de forma assíncrona via processador de Outbox (não bloqueia request HTTP).
 - Variável utilizada: `N8N_APPOINTMENTS_WEBHOOK_URL`.
+- Isolamento de banco: o container `n8n` usa banco dedicado `n8n_db` (separado do `medcore_db`).
+
+### Operação n8n (Setup/Recuperação)
+- Acesso UI: `http://192.168.0.109:5678`
+- Se aparecer `Set up owner account` após reinício, finalize o setup normalmente.
+- Se ocorrer erro de owner (`Could not find any entity of type "User" ... global:owner`), execute:
+```bash
+cd /home/sppro/medcore-project
+docker compose stop n8n
+docker exec medcore-db psql -U postgres -d postgres -c "CREATE DATABASE n8n_db;"
+docker compose up -d n8n
+```
+- Após subida, se o erro persistir:
+```bash
+docker exec -it medcore-n8n n8n user-management:reset
+docker compose restart n8n
+```
 
 ### Documentação (Swagger)
 - Swagger configurado com bearer token JWT.

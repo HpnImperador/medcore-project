@@ -110,6 +110,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Auditorias de Outbox enriquecidas com `ip_address`, `user_agent` e `correlation_id`.
 - Hardening de proteção dos endpoints admin de Outbox com rate limit configurável por `OUTBOX_ADMIN_RATE_LIMIT_*`.
 - Automação de limpeza passou a incluir retenção de auditorias (`OUTBOX_AUTO_AUDIT_CLEANUP_ENABLED` e `OUTBOX_AUDIT_RETENTION_DAYS`).
+- `docker-compose.yml` atualizado para isolar o n8n em banco dedicado (`n8n_db`), removendo dependência de schema no `medcore_db`.
+- Documentação operacional do n8n atualizada com procedimento de recuperação de setup/owner e comandos de reset.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
