@@ -109,6 +109,7 @@ WHERE email = 'medico@medcore.com';
 - `GET /health/metrics`: uptime e uso de memória do processo.
 - `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
 - `GET /health/alerts`: histórico recente de alertas operacionais disparados.
+- Histórico de alertas persistido em banco na tabela `health_alert_events`.
 - Logs HTTP emitidos em JSON estruturado (`event=http_request_completed`).
 
 ## 🧪 Checks de Qualidade

@@ -65,6 +65,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Bateria API ampliada para validar `login-lock` e `login-lock/clear` quando credenciais admin estiverem disponíveis.
 - Histórico de alertas operacionais adicionado com endpoint `GET /health/alerts`.
 - Bateria API ampliada para validar `GET /health/alerts`.
+- Persistência do histórico de alertas em PostgreSQL com tabela `health_alert_events` e migration dedicada.
+- `HealthAlertService` migrado de buffer em memória para Repository Pattern com consulta persistida.
 
 ## [2026-02-22]
 

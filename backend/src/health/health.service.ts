@@ -77,7 +77,7 @@ export class HealthService {
     };
   }
 
-  getRecentAlerts(limit?: number) {
+  async getRecentAlerts(limit?: number) {
     return this.healthAlertService.listRecentAlerts(limit);
   }
 

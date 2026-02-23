@@ -67,6 +67,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - `/health` retorna status consolidado (`ok`, `degraded`, `error`).
 - Quando `N8N_APPOINTMENTS_WEBHOOK_URL` não estiver definida, o status fica `degraded` sem derrubar a API.
 - `GET /health/alert-check` dispara alerta operacional via webhook quando status estiver `degraded`/`error`.
+- `GET /health/alerts` agora retorna histórico persistido em banco (`health_alert_events`).
 
 ### Interceptors e Exception Filter
 - `LoggingInterceptor` global para auditoria de método, rota, status, duração, ator e IP.

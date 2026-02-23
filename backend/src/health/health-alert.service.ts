@@ -1,6 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
+import type {
+  HealthAlertEventEntity,
+  IHealthAlertsRepository,
+} from '../domain/repositories/health-alerts.repository.interface';
 
 interface HealthSummaryLike {
   status: 'ok' | 'degraded' | 'error';
@@ -21,9 +26,12 @@ export interface HealthAlertEntry {
 export class HealthAlertService {
   private readonly logger = new Logger(HealthAlertService.name);
   private lastAlertAtMs = 0;
-  private readonly alertHistory: HealthAlertEntry[] = [];
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(REPOSITORY_TOKENS.HEALTH_ALERTS)
+    private readonly healthAlertsRepository: IHealthAlertsRepository,
+  ) {}
 
   async notifyIfNeeded(summary: HealthSummaryLike) {
     if (summary.status === 'ok') {
@@ -75,13 +83,12 @@ export class HealthAlertService {
           timestamp: new Date(now).toISOString(),
         }),
       );
-
-      this.pushAlertHistory({
+      await this.healthAlertsRepository.create({
         event: 'health_alert_sent',
         status: summary.status,
         webhook_url: webhookUrl,
         reason: 'alert_sent',
-        timestamp: new Date(now).toISOString(),
+        payload,
       });
 
       return {
@@ -98,14 +105,13 @@ export class HealthAlertService {
           timestamp: new Date(now).toISOString(),
         }),
       );
-
-      this.pushAlertHistory({
+      await this.healthAlertsRepository.create({
         event: 'health_alert_failed',
         status: summary.status,
         webhook_url: webhookUrl,
         reason: 'alert_failed',
         error: error instanceof Error ? error.message : 'Erro desconhecido',
-        timestamp: new Date(now).toISOString(),
+        payload,
       });
 
       return {
@@ -115,9 +121,9 @@ export class HealthAlertService {
     }
   }
 
-  listRecentAlerts(limit = 20) {
-    const normalizedLimit = Number.isNaN(limit) || limit <= 0 ? 20 : limit;
-    return this.alertHistory.slice(0, Math.min(normalizedLimit, 100));
+  async listRecentAlerts(limit = 20): Promise<HealthAlertEntry[]> {
+    const alerts = await this.healthAlertsRepository.findRecent(limit);
+    return alerts.map((alert) => this.toHealthAlertEntry(alert));
   }
 
   private getCooldownMinutes(): number {
@@ -133,10 +139,14 @@ export class HealthAlertService {
     return parsed;
   }
 
-  private pushAlertHistory(entry: HealthAlertEntry): void {
-    this.alertHistory.unshift(entry);
-    if (this.alertHistory.length > 100) {
-      this.alertHistory.pop();
-    }
+  private toHealthAlertEntry(alert: HealthAlertEventEntity): HealthAlertEntry {
+    return {
+      event: alert.event as 'health_alert_sent' | 'health_alert_failed',
+      status: alert.status as 'degraded' | 'error',
+      webhook_url: alert.webhook_url,
+      reason: alert.reason as 'alert_sent' | 'alert_failed',
+      error: alert.error ?? undefined,
+      timestamp: alert.created_at.toISOString(),
+    };
   }
 }

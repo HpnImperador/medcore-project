@@ -68,7 +68,7 @@ export class HealthController {
   @ApiOkResponse({
     description: 'Histórico de alertas retornado com sucesso.',
   })
-  alerts(@Query('limit') limit?: string) {
+  async alerts(@Query('limit') limit?: string) {
     const parsed = limit ? Number.parseInt(limit, 10) : undefined;
     return this.healthService.getRecentAlerts(parsed);
   }

@@ -942,3 +942,17 @@ model refresh_tokens {
   @@index([organization_id, expires_at])
   @@index([token_hash])
 }
+
+model health_alert_events {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event       String   @db.VarChar(40)
+  status      String   @db.VarChar(20)
+  webhook_url String   @db.VarChar(500)
+  reason      String   @db.VarChar(40)
+  error       String?
+  payload     Json?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at])
+  @@index([status, created_at])
+}
