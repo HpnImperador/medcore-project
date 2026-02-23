@@ -127,6 +127,7 @@ WHERE email = 'medico@medcore.com';
 - `GET /health/db`: teste de conectividade com PostgreSQL.
 - `GET /health/n8n`: teste de conectividade do webhook n8n.
 - `GET /health/metrics`: uptime e uso de memória do processo.
+- `GET /health/outbox`: métricas do pipeline Outbox (`pending`, `failed`, `latência`).
 - `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
 - `GET /health/alerts`: histórico recente de alertas operacionais disparados.
 - Histórico de alertas persistido em banco na tabela `health_alert_events`.

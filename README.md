@@ -102,6 +102,7 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
   - `GET /health/db`
   - `GET /health/n8n`
   - `GET /health/metrics`
+  - `GET /health/outbox`
   - `GET /health/alert-check`
   - `GET /health/alerts`
 - `/health` retorna status consolidado (`ok`, `degraded`, `error`).
@@ -185,6 +186,9 @@ Exemplo:
 - `OUTBOX_POLL_INTERVAL_MS`
 - `OUTBOX_BATCH_SIZE`
 - `OUTBOX_MAX_ATTEMPTS`
+- `OUTBOX_ALERT_PENDING_THRESHOLD`
+- `OUTBOX_ALERT_FAILED_THRESHOLD`
+- `OUTBOX_ALERT_OLDEST_PENDING_SECONDS`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
 
@@ -212,6 +216,7 @@ Cobertura atual da bateria:
 - `GET /health`
 - `GET /health/db`
 - `GET /health/metrics`
+- `GET /health/outbox`
 - `GET /health/alert-check`
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)

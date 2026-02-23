@@ -4,6 +4,7 @@ import {
   CreateOutboxEventInput,
   IOutboxRepository,
   OutboxEventEntity,
+  OutboxMetrics,
 } from '../../domain/repositories/outbox.repository.interface';
 
 @Injectable()
@@ -94,5 +95,47 @@ export class PrismaOutboxRepository implements IOutboxRepository {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${eventId}::uuid
     `;
+  }
+
+  async getMetrics(): Promise<OutboxMetrics> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        pending_count: number;
+        failed_count: number;
+        processing_count: number;
+        processed_count: number;
+        oldest_pending_age_seconds: number | null;
+        average_processing_latency_ms: number | null;
+      }>
+    >`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pending_count,
+        COUNT(*) FILTER (WHERE status = 'FAILED')::int AS failed_count,
+        COUNT(*) FILTER (WHERE status = 'PROCESSING')::int AS processing_count,
+        COUNT(*) FILTER (WHERE status = 'PROCESSED')::int AS processed_count,
+        COALESCE(
+          MAX(
+            EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - occurred_at))::int
+          ) FILTER (WHERE status IN ('PENDING', 'FAILED', 'PROCESSING')),
+          0
+        )::int AS oldest_pending_age_seconds,
+        COALESCE(
+          AVG(
+            EXTRACT(EPOCH FROM (processed_at - occurred_at)) * 1000
+          ) FILTER (WHERE status = 'PROCESSED' AND processed_at IS NOT NULL),
+          0
+        )::int AS average_processing_latency_ms
+      FROM domain_outbox_events
+    `;
+
+    const row = rows[0];
+    return {
+      pending_count: row?.pending_count ?? 0,
+      failed_count: row?.failed_count ?? 0,
+      processing_count: row?.processing_count ?? 0,
+      processed_count: row?.processed_count ?? 0,
+      oldest_pending_age_seconds: row?.oldest_pending_age_seconds ?? 0,
+      average_processing_latency_ms: row?.average_processing_latency_ms ?? 0,
+    };
   }
 }

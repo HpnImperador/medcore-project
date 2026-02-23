@@ -49,6 +49,18 @@ export class HealthController {
     return this.healthService.getMetrics();
   }
 
+  @Get('outbox')
+  @ApiOperation({
+    summary:
+      'Métricas operacionais do Outbox (pendentes, failed e latência de processamento)',
+  })
+  @ApiOkResponse({
+    description: 'Métricas do Outbox retornadas com sucesso.',
+  })
+  async outbox() {
+    return this.healthService.checkOutbox();
+  }
+
   @Get('alert-check')
   @ApiOperation({
     summary:

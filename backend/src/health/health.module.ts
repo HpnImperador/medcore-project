@@ -6,6 +6,7 @@ import { N8nWebhookService } from '../integrations/n8n/n8n-webhook.service';
 import { HealthAlertService } from './health-alert.service';
 import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
 import { PrismaHealthAlertsRepository } from '../infra/repositories/prisma-health-alerts.repository';
+import { PrismaOutboxRepository } from '../infra/repositories/prisma-outbox.repository';
 
 @Module({
   controllers: [HealthController],
@@ -17,6 +18,10 @@ import { PrismaHealthAlertsRepository } from '../infra/repositories/prisma-healt
     {
       provide: REPOSITORY_TOKENS.HEALTH_ALERTS,
       useClass: PrismaHealthAlertsRepository,
+    },
+    {
+      provide: REPOSITORY_TOKENS.OUTBOX,
+      useClass: PrismaOutboxRepository,
     },
   ],
 })

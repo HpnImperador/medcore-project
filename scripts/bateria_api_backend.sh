@@ -101,6 +101,13 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Health metrics validado."
 
+CODE=$(http_code GET "$BASE_URL/health/outbox")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /health/outbox falhou (HTTP $CODE)."
+fi
+ok "Health outbox validado."
+
 CODE=$(http_code GET "$BASE_URL/health/alert-check")
 if [[ "$CODE" != "200" ]]; then
   cat /tmp/medcore_bateria_body.json
