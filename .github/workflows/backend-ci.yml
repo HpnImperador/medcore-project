@@ -96,6 +96,9 @@ jobs:
       - name: Rodar bateria de API (smoke)
         run: bash ./scripts/bateria_api_backend.sh
 
+      - name: Rodar teste operacional de cleanup do Outbox
+        run: bash ./scripts/testar_outbox_cleanup.sh
+
       - name: Exibir log do backend em caso de falha
         if: failure()
         run: |

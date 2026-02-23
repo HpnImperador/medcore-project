@@ -103,6 +103,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Arquivo `backend/.env.example` adicionado com baseline de configuração (auth, appointments, outbox, health e cleanup automático).
 - Script `scripts/testar_outbox_cleanup.sh` adicionado para validação operacional isolada do fluxo de limpeza/auditoria do Outbox com login admin automático.
 - Bateria principal (`scripts/bateria_api_backend.sh`) passou a suportar flag `ENABLE_OUTBOX_CLEANUP_CHECK` para controlar a validação de cleanup/auditoria do Outbox.
+- Pipeline CI do backend (`.github/workflows/backend-ci.yml`) ampliado para executar também `scripts/testar_outbox_cleanup.sh`.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
