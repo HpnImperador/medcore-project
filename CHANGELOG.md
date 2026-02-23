@@ -28,7 +28,10 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Rotação de sessão implementada com refresh token:
   - `POST /auth/refresh`
   - `POST /auth/logout`
+- Revogação global de sessões:
+  - `POST /auth/logout-all`
 - Persistência de refresh tokens com hash em banco (`refresh_tokens`).
+- Higienização automática de refresh tokens expirados/revogados no fluxo de autenticação.
 
 ## [2026-02-22]
 

@@ -23,4 +23,9 @@ export interface IRefreshTokensRepository {
   revokeById(tokenId: string, replacedByTokenId?: string): Promise<void>;
   touchUsage(tokenId: string): Promise<void>;
   revokeByHash(tokenHash: string): Promise<void>;
+  revokeAllByUserInOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<void>;
+  purgeExpiredAndRevoked(): Promise<number>;
 }

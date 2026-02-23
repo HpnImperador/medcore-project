@@ -10,6 +10,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Implementação de autenticação com `POST /auth/login`.
 - Implementação de rotação de sessão com `POST /auth/refresh`.
 - Implementação de revogação de sessão com `POST /auth/logout`.
+- Implementação de revogação global de sessões com `POST /auth/logout-all`.
 - Implementação de perfil autenticado com `GET /users/me`.
 - Implementação de RBAC com `Role`, `@Roles` e `RolesGuard`.
 - Implementação global de `LoggingInterceptor`, `TransformInterceptor` e `GlobalExceptionFilter`.
@@ -41,6 +42,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Regra de vínculo médico-filial via `user_branches`.
 - Login exige `password_hash` em formato bcrypt (`$2a$`, `$2b$` ou `$2y$`).
 - Refresh tokens persistidos com hash e rotação segura.
+- Política de higiene aplicada em autenticação: purge de tokens expirados/revogados.
 
 ## ⚙️ Execução Local
 ```bash
@@ -89,6 +91,7 @@ npm test -- --runInBand
   - `POST /auth/login`
   - `POST /auth/refresh`
   - `POST /auth/logout`
+  - `POST /auth/logout-all`
   - `GET /users/me`
   - `POST /appointments`
   - `GET /appointments`

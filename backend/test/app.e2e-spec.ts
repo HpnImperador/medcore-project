@@ -252,6 +252,22 @@ describe('MedCore API (e2e)', () => {
       });
       return Promise.resolve();
     }),
+    revokeAllByUserInOrganization: jest.fn(
+      (userId: string, organizationId: string) => {
+        refreshTokensStore.forEach((item) => {
+          if (
+            item.user_id === userId &&
+            item.organization_id === organizationId &&
+            item.revoked_at === null
+          ) {
+            item.revoked_at = new Date();
+            item.last_used_at = new Date();
+          }
+        });
+        return Promise.resolve();
+      },
+    ),
+    purgeExpiredAndRevoked: jest.fn(() => Promise.resolve(0)),
   };
 
   beforeAll(async () => {
@@ -370,6 +386,29 @@ describe('MedCore API (e2e)', () => {
 
     const logout = dataOf<{ success: boolean }>(response);
     expect(logout.success).toBe(true);
+  });
+
+  it('deve revogar todas as sessões em /auth/logout-all', async () => {
+    const loginResponse = await request(baseUrl)
+      .post('/auth/login')
+      .send({
+        email: 'medico@medcore.com',
+        password: '123456',
+      })
+      .expect(201);
+
+    const login = dataOf<LoginData>(loginResponse);
+
+    const response = await request(baseUrl)
+      .post('/auth/logout-all')
+      .set('Authorization', `Bearer ${login.access_token}`)
+      .expect(201);
+
+    const logoutAll = dataOf<{ success: boolean }>(response);
+    expect(logoutAll.success).toBe(true);
+    expect(
+      mockRefreshTokensRepository.revokeAllByUserInOrganization,
+    ).toHaveBeenCalled();
   });
 
   it('deve retornar 401 para login inválido', async () => {

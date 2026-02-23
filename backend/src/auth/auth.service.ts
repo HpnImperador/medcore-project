@@ -10,6 +10,7 @@ import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
 import type { IRefreshTokensRepository } from '../domain/repositories/refresh-tokens.repository.interface';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LogoutDto } from './dto/logout.dto';
+import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
 
 interface RefreshTokenPayload {
   sub: string;
@@ -30,6 +31,7 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    await this.refreshTokensRepository.purgeExpiredAndRevoked();
     const user = await this.userRepository.findByEmail(dto.email);
 
     if (!user || !user.organization_id) {
@@ -76,6 +78,7 @@ export class AuthService {
   }
 
   async refresh(dto: RefreshTokenDto) {
+    await this.refreshTokensRepository.purgeExpiredAndRevoked();
     const payload = await this.verifyRefreshToken(dto.refresh_token);
     const tokenHash = this.hashToken(dto.refresh_token);
 
@@ -123,8 +126,19 @@ export class AuthService {
   }
 
   async logout(dto: LogoutDto) {
+    await this.refreshTokensRepository.purgeExpiredAndRevoked();
     const tokenHash = this.hashToken(dto.refresh_token);
     await this.refreshTokensRepository.revokeByHash(tokenHash);
+    return { success: true };
+  }
+
+  async logoutAll(currentUser: AuthenticatedUser) {
+    await this.refreshTokensRepository.purgeExpiredAndRevoked();
+    await this.refreshTokensRepository.revokeAllByUserInOrganization(
+      currentUser.userId,
+      currentUser.organizationId,
+    );
+
     return { success: true };
   }
 

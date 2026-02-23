@@ -32,12 +32,20 @@ interface RefreshTokensDelegate {
   }): Promise<RefreshTokenEntity>;
   updateMany(args: {
     where: {
-      token_hash: string;
-      revoked_at: null;
+      token_hash?: string;
+      user_id?: string;
+      organization_id?: string;
+      revoked_at?: null;
+      expires_at?: { lte: Date };
     };
     data: {
-      revoked_at: Date;
-      last_used_at: Date;
+      revoked_at?: Date;
+      last_used_at?: Date;
+    };
+  }): Promise<{ count: number }>;
+  deleteMany(args: {
+    where: {
+      OR: Array<{ expires_at: { lte: Date } } | { revoked_at: { lte: Date } }>;
     };
   }): Promise<{ count: number }>;
 }
@@ -104,6 +112,37 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
         last_used_at: new Date(),
       },
     });
+  }
+
+  async revokeAllByUserInOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<void> {
+    await this.refreshTokensDelegate.updateMany({
+      where: {
+        user_id: userId,
+        organization_id: organizationId,
+        revoked_at: null,
+      },
+      data: {
+        revoked_at: new Date(),
+        last_used_at: new Date(),
+      },
+    });
+  }
+
+  async purgeExpiredAndRevoked(): Promise<number> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const result = await this.refreshTokensDelegate.deleteMany({
+      where: {
+        OR: [
+          { expires_at: { lte: new Date() } },
+          { revoked_at: { lte: thirtyDaysAgo } },
+        ],
+      },
+    });
+
+    return result.count;
   }
 
   private get refreshTokensDelegate(): RefreshTokensDelegate {
