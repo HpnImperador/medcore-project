@@ -17,7 +17,6 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Módulo `users` com endpoint `GET /users/me`.
 - RBAC com `Role`, `@Roles` e `RolesGuard`.
 - Repositório de usuários (`IUserRepository`) com implementação Prisma.
-- Compatibilidade de login com hash bcrypt e fallback legado em texto plano.
 - `LoggingInterceptor` global com auditoria de request/response.
 - `TransformInterceptor` global com envelope `{ data, meta }`.
 - `GlobalExceptionFilter` global com mapeamento de erro HTTP/Prisma.
@@ -25,6 +24,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - login JWT
   - perfil autenticado
   - ciclo completo de agendamentos
+- Hardening de autenticação: remoção do fallback de senha em texto plano; login agora aceita apenas `password_hash` bcrypt.
 
 ## [2026-02-22]
 

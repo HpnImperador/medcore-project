@@ -37,6 +37,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Isolamento por `organization_id`.
 - Escopo de filial por `branch_ids` no token.
 - Regra de vínculo médico-filial via `user_branches`.
+- Login exige `password_hash` em formato bcrypt (`$2a$`, `$2b$` ou `$2y$`).
 
 ## ⚙️ Execução Local
 ```bash
@@ -54,6 +55,18 @@ Comandos:
 ```bash
 npm run prisma:migrate
 npm run prisma:deploy
+```
+
+## 🔒 Migração de Senhas Legadas
+Se houver usuários com senha em texto plano, atualize para bcrypt:
+```bash
+node -e "const {hashSync}=require('bcryptjs'); console.log(hashSync('123456',10));"
+```
+Depois aplique no banco (exemplo):
+```sql
+UPDATE users
+SET password_hash = '<hash_bcrypt>'
+WHERE email = 'medico@medcore.com';
 ```
 
 ## 📘 Documentação

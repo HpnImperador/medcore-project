@@ -54,7 +54,8 @@ describe('MedCore API (e2e)', () => {
         organization_id: organizationId,
         name: 'Medico Teste',
         email: 'medico@medcore.com',
-        password_hash: '123456',
+        password_hash:
+          '$2b$10$rlf4JX3lLyqbUoPM6cPWlusrTsL1hsrsaNoAOvmNLTne5eVBxx9yC',
         role: 'DOCTOR',
         user_branches: [{ branch_id: branchId }],
       });

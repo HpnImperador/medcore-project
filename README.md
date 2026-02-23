@@ -54,6 +54,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
 - Proteção de rotas com `JwtAuthGuard` (Passport JWT).
 - RBAC implementado com `Role`, `@Roles` e `RolesGuard`.
+- Login exige `password_hash` em bcrypt para validação de credenciais.
 - Decorador `@CurrentUser` para extrair contexto autenticado nas rotas.
 
 ## 📌 Status dos Itens Arquiteturais (Roteiro)

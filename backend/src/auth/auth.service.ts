@@ -58,11 +58,16 @@ export class AuthService {
     plainPassword: string,
     passwordHash: string,
   ): Promise<boolean> {
-    // Compatibilidade com bases antigas: aceita hash bcrypt e fallback legado em texto plano.
-    if (passwordHash.startsWith('$2a$') || passwordHash.startsWith('$2b$')) {
-      return compare(plainPassword, passwordHash);
+    // Hardening: aceitamos apenas hash bcrypt em produção.
+    const isBcryptHash =
+      passwordHash.startsWith('$2a$') ||
+      passwordHash.startsWith('$2b$') ||
+      passwordHash.startsWith('$2y$');
+
+    if (!isBcryptHash) {
+      return false;
     }
 
-    return plainPassword === passwordHash;
+    return compare(plainPassword, passwordHash);
   }
 }
