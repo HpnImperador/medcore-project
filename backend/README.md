@@ -81,6 +81,11 @@ npm run build
 npm run start:dev
 ```
 
+Arquivo base de configuração:
+```bash
+cp .env.example .env
+```
+
 Subida segura (evita erro `EADDRINUSE` em 0.0.0.0:3000):
 ```bash
 cd /home/sppro/medcore-project
@@ -97,6 +102,26 @@ npm run prisma:migrate
 npm run prisma:deploy
 npm run prisma:seed
 ```
+
+## ♻️ Outbox Cleanup Automático (Produção)
+A limpeza automática é segura por padrão (`disabled` + `dry_run=true`).
+
+Configuração recomendada para produção:
+```env
+OUTBOX_AUTO_CLEANUP_ENABLED=true
+OUTBOX_AUTO_CLEANUP_ALLOW_NON_PROD=false
+OUTBOX_AUTO_CLEANUP_RUN_ON_START=false
+OUTBOX_AUTO_CLEANUP_INTERVAL_MS=86400000
+OUTBOX_AUTO_CLEANUP_RETENTION_DAYS=30
+OUTBOX_AUTO_CLEANUP_INCLUDE_FAILED=false
+OUTBOX_AUTO_CLEANUP_DRY_RUN=false
+OUTBOX_MAINTENANCE_SYSTEM_USER_ID=00000000-0000-0000-0000-000000000000
+```
+
+Recomendação de rollout:
+1. Ativar primeiro com `OUTBOX_AUTO_CLEANUP_DRY_RUN=true` por 24h.
+2. Verificar `GET /outbox/maintenance-audit`.
+3. Alterar para `OUTBOX_AUTO_CLEANUP_DRY_RUN=false`.
 
 O seed é idempotente e garante:
 - organização demo
