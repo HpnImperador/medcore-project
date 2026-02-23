@@ -5,6 +5,18 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 ## 📒 Histórico de Mudanças
 - Consulte `CHANGELOG.md` para o histórico cronológico de evolução do projeto.
 
+## 🔁 CI/CD
+- Pipeline GitHub Actions para backend em `.github/workflows/backend-ci.yml`.
+- Executa automaticamente em `push`/`pull_request` para `main` e `develop`.
+- Etapas:
+  - `npm ci`
+  - `prisma:generate`
+  - `prisma:deploy`
+  - `prisma:seed`
+  - `lint`
+  - `build`
+  - sobe backend e executa `scripts/bateria_api_backend.sh`
+
 ## 🧭 Padrão de Entregas
 - Processo operacional documentado em `docs/OPERACAO_ENTREGAS.md`.
 - Script de publicação de entrega grande: `scripts/push_grande_entrega.sh`.

@@ -1,0 +1,103 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  backend-quality-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: medcore_root_2026
+          POSTGRES_DB: medcore_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d medcore_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:medcore_root_2026@127.0.0.1:5432/medcore_db?schema=public
+      JWT_SECRET: medcore-dev-secret
+      JWT_EXPIRES_IN: 12h
+      JWT_REFRESH_SECRET: medcore-dev-refresh-secret
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_MAX_ACTIVE_SESSIONS: 5
+      BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependências do backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Gerar client Prisma
+        working-directory: backend
+        run: npm run prisma:generate
+
+      - name: Aplicar migrations no banco de CI
+        working-directory: backend
+        run: npm run prisma:deploy
+
+      - name: Executar seed idempotente
+        working-directory: backend
+        run: npm run prisma:seed
+
+      - name: Lint backend
+        working-directory: backend
+        run: npm run lint
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Subir backend em background
+        working-directory: backend
+        run: |
+          nohup npm run start:prod > /tmp/medcore-backend.log 2>&1 &
+          echo $! > /tmp/medcore-backend.pid
+
+      - name: Aguardar backend ficar disponível
+        run: |
+          for i in {1..40}; do
+            if curl -fsS "$BASE_URL/api" >/dev/null; then
+              echo "Backend disponível."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend não ficou disponível a tempo."
+          cat /tmp/medcore-backend.log || true
+          exit 1
+
+      - name: Rodar bateria de API (smoke)
+        run: bash ./scripts/bateria_api_backend.sh
+
+      - name: Exibir log do backend em caso de falha
+        if: failure()
+        run: |
+          echo "===== LOG BACKEND ====="
+          cat /tmp/medcore-backend.log || true

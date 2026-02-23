@@ -47,6 +47,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `GET /health/n8n`
   - `GET /health/metrics`
 - Bateria API ampliada para validar health endpoints.
+- Pipeline CI do backend adicionado em `.github/workflows/backend-ci.yml` com PostgreSQL de serviço, `prisma:deploy`, `prisma:seed`, `lint`, `build` e bateria API.
+- `scripts/bateria_api_backend.sh` ajustado para usar caminho relativo do repositório ao carregar `backend/.seed.env`.
 
 ## [2026-02-22]
 
