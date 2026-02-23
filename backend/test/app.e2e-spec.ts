@@ -235,6 +235,7 @@ describe('MedCore API (e2e)', () => {
         orgId: string,
         docId: string,
         scheduledAt: Date,
+        durationMinutes: number,
         excludeAppointmentId?: string,
       ) =>
         Promise.resolve(
@@ -242,7 +243,8 @@ describe('MedCore API (e2e)', () => {
             (item) =>
               item.organization_id === orgId &&
               item.doctor_id === docId &&
-              item.scheduled_at.getTime() === scheduledAt.getTime() &&
+              Math.abs(item.scheduled_at.getTime() - scheduledAt.getTime()) <
+                durationMinutes * 60 * 1000 &&
               item.status !== 'CANCELED' &&
               (!excludeAppointmentId || item.id !== excludeAppointmentId),
           ),

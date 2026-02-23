@@ -90,16 +90,25 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
     organizationId: string,
     doctorId: string,
     scheduledAt: Date,
+    durationMinutes: number,
     excludeAppointmentId?: string,
   ): Promise<boolean> {
-    const conflict = await this.appointmentsDelegate.findFirst({
+    const durationMs = Math.max(1, durationMinutes) * 60 * 1000;
+    const lowerBoundExclusive = new Date(scheduledAt.getTime() - durationMs);
+    const upperBoundExclusive = new Date(scheduledAt.getTime() + durationMs);
+
+    const conflict = await this.prisma.appointments.findFirst({
       where: {
         organization_id: organizationId,
         doctor_id: doctorId,
-        scheduled_at: scheduledAt,
+        scheduled_at: {
+          gt: lowerBoundExclusive,
+          lt: upperBoundExclusive,
+        },
         status: { not: 'CANCELED' },
         ...(excludeAppointmentId ? { NOT: { id: excludeAppointmentId } } : {}),
       },
+      select: { id: true },
     });
 
     return Boolean(conflict);

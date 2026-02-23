@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type {
   AppointmentEntity,
   IAppointmentsRepository,
@@ -26,6 +27,7 @@ export class AppointmentsService {
     @Inject(REPOSITORY_TOKENS.PATIENTS)
     private readonly patientsRepository: IPatientsRepository,
     private readonly n8nWebhookService: N8nWebhookService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -299,11 +301,13 @@ export class AppointmentsService {
     scheduledAt: Date,
     excludeAppointmentId?: string,
   ): Promise<void> {
+    const durationMinutes = this.getAppointmentDurationMinutes();
     const hasConflict =
       await this.appointmentsRepository.hasDoctorScheduleConflict(
         organizationId,
         doctorId,
         scheduledAt,
+        durationMinutes,
         excludeAppointmentId,
       );
 
@@ -312,5 +316,16 @@ export class AppointmentsService {
         'Conflito de agenda: médico já possui consulta neste horário.',
       );
     }
+  }
+
+  private getAppointmentDurationMinutes(): number {
+    const configured = this.configService.get<string>(
+      'APPOINTMENT_DURATION_MINUTES',
+    );
+    const parsed = Number.parseInt(configured ?? '', 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return 30;
+    }
+    return parsed;
   }
 }

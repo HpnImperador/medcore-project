@@ -324,10 +324,22 @@ if [[ -z "$APPOINTMENT_ID" || "$APPOINTMENT_ID" == "undefined" ]]; then
 fi
 ok "Criação de agendamento validada (id=$APPOINTMENT_ID)."
 
+CONFLICT_SCHEDULED_AT=$(date -u -d '+2 hours 15 minutes' +"%Y-%m-%dT%H:%M:%S.000Z")
+CONFLICT_APPT_PAYLOAD=$(cat <<JSON
+{
+  "branch_id": "$TEST_BRANCH_ID",
+  "patient_id": "$TEST_PATIENT_ID",
+  "doctor_id": "$TEST_DOCTOR_ID",
+  "scheduled_at": "$CONFLICT_SCHEDULED_AT",
+  "notes": "Bateria conflito de agenda"
+}
+JSON
+)
+
 CODE=$(http_code POST "$BASE_URL/appointments" \
   -H "Authorization: Bearer $NEW_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "$CREATE_APPT_PAYLOAD")
+  -d "$CONFLICT_APPT_PAYLOAD")
 if [[ "$CODE" != "400" ]]; then
   cat /tmp/medcore_bateria_body.json
   fail "Conflito de agenda não bloqueado (esperado 400, recebido $CODE)."

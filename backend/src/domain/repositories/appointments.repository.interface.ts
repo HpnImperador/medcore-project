@@ -46,6 +46,7 @@ export interface IAppointmentsRepository {
     organizationId: string,
     doctorId: string,
     scheduledAt: Date,
+    durationMinutes: number,
     excludeAppointmentId?: string,
   ): Promise<boolean>;
   findByIdInOrganizationAndBranches(

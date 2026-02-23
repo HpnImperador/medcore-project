@@ -134,6 +134,7 @@ Exemplo:
 - `AUTH_MAX_FAILED_ATTEMPTS`
 - `AUTH_ATTEMPT_WINDOW_MINUTES`
 - `AUTH_LOCK_MINUTES`
+- `APPOINTMENT_DURATION_MINUTES`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
@@ -165,7 +166,7 @@ Cobertura atual da bateria:
 - `GET /health/alert-check`
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
-- bloqueio de conflito de horário por médico em agendamento (`400`)
+- bloqueio de conflito de horário por médico em agendamento (`400`, janela configurável)
 - `POST /auth/login`
 - `GET /users/me`
 - `POST /auth/refresh`
