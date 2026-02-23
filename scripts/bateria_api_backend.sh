@@ -215,7 +215,21 @@ JSON
       cat /tmp/medcore_bateria_body.json
       fail "Lock deveria estar limpo após /auth/login-lock/clear."
     fi
-    ok "Endpoints admin de lock de login validados."
+
+    REPLAY_PAYLOAD=$(cat <<JSON
+{"limit":10,"reason":"Bateria de validacao operacional do replay outbox"}
+JSON
+)
+    CODE=$(http_code POST "$BASE_URL/outbox/replay-failed" \
+      -H "Authorization: Bearer $ADMIN_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d "$REPLAY_PAYLOAD")
+    if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "POST /outbox/replay-failed falhou (HTTP $CODE)."
+    fi
+
+    ok "Endpoints admin de lock de login e replay de outbox validados."
   else
     warn "ADMIN_EMAIL/ADMIN_PASSWORD não informados. Pulando validação dos endpoints admin de lock."
   fi

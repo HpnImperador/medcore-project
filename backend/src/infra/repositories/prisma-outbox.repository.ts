@@ -5,6 +5,8 @@ import {
   IOutboxRepository,
   OutboxEventEntity,
   OutboxMetrics,
+  ReplayFailedEventsInput,
+  ReplayFailedEventsResult,
 } from '../../domain/repositories/outbox.repository.interface';
 
 @Injectable()
@@ -137,5 +139,95 @@ export class PrismaOutboxRepository implements IOutboxRepository {
       oldest_pending_age_seconds: row?.oldest_pending_age_seconds ?? 0,
       average_processing_latency_ms: row?.average_processing_latency_ms ?? 0,
     };
+  }
+
+  async replayFailedEvents(
+    input: ReplayFailedEventsInput,
+  ): Promise<ReplayFailedEventsResult> {
+    const normalizedLimit =
+      Number.isNaN(input.limit ?? 0) || (input.limit ?? 0) <= 0
+        ? 50
+        : Math.min(input.limit ?? 50, 500);
+
+    return this.prisma.$transaction(async (tx) => {
+      const mode = input.event_ids?.length ? 'SELECTED' : 'BULK';
+      const candidateRows = input.event_ids?.length
+        ? await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id
+            FROM domain_outbox_events
+            WHERE status = 'FAILED'
+              AND id = ANY(${input.event_ids}::uuid[])
+            ORDER BY occurred_at ASC
+            LIMIT ${normalizedLimit}
+          `
+        : await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id
+            FROM domain_outbox_events
+            WHERE status = 'FAILED'
+            ORDER BY occurred_at ASC
+            LIMIT ${normalizedLimit}
+          `;
+
+      if (candidateRows.length === 0) {
+        await tx.$executeRaw`
+          INSERT INTO outbox_replay_audit (
+            outbox_event_id,
+            organization_id,
+            requested_by_user_id,
+            reason,
+            mode
+          )
+          VALUES (
+            NULL,
+            ${input.organization_id}::uuid,
+            ${input.requested_by_user_id}::uuid,
+            ${input.reason ?? 'manual_replay_without_failed_events'},
+            ${mode}
+          )
+        `;
+        return {
+          requested: input.event_ids?.length ?? normalizedLimit,
+          replayed: 0,
+          skipped: input.event_ids?.length ?? 0,
+        };
+      }
+
+      const ids = candidateRows.map((row) => row.id);
+      const requested = input.event_ids?.length ?? ids.length;
+
+      const updated = await tx.$executeRaw`
+        UPDATE domain_outbox_events
+        SET
+          status = 'PENDING',
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ANY(${ids}::uuid[])
+          AND status = 'FAILED'
+      `;
+
+      await tx.$executeRaw`
+        INSERT INTO outbox_replay_audit (
+          outbox_event_id,
+          organization_id,
+          requested_by_user_id,
+          reason,
+          mode
+        )
+        SELECT
+          e.id,
+          e.organization_id,
+          ${input.requested_by_user_id}::uuid,
+          ${input.reason ?? null},
+          ${mode}
+        FROM domain_outbox_events e
+        WHERE e.id = ANY(${ids}::uuid[])
+      `;
+
+      const replayed = Number(updated);
+      return {
+        requested,
+        replayed,
+        skipped: Math.max(0, requested - replayed),
+      };
+    });
   }
 }

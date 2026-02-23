@@ -998,3 +998,16 @@ model domain_outbox_events {
   @@index([event_name, occurred_at])
   @@index([correlation_id])
 }
+
+model outbox_replay_audit {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outbox_event_id      String?  @db.Uuid
+  organization_id      String   @db.Uuid
+  requested_by_user_id String   @db.Uuid
+  reason               String?  @db.VarChar(500)
+  mode                 String   @db.VarChar(20)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([outbox_event_id, created_at])
+  @@index([organization_id, created_at])
+}

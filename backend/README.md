@@ -25,6 +25,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - JWT com Passport e `@CurrentUser` para contexto autenticado.
 - Swagger com autenticação Bearer JWT.
 - Outbox transacional para eventos de agendamento (`domain_outbox_events`).
+- Endpoint ADMIN para replay manual de eventos FAILED (`POST /outbox/replay-failed`) com auditoria em `outbox_replay_audit`.
 - Processador assíncrono de Outbox para entrega de eventos ao n8n.
 - Healthchecks e métricas básicas de processo (`/health/*`).
 

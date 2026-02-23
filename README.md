@@ -126,6 +126,7 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
 - Endpoint `POST /auth/logout-all` implementado para revogar todas as sessões do usuário.
 - Endpoint `GET /auth/login-lock` para inspeção de bloqueio de login (ADMIN).
 - Endpoint `POST /auth/login-lock/clear` para desbloqueio manual de login (ADMIN).
+- Endpoint `POST /outbox/replay-failed` para replay manual de eventos FAILED do Outbox (ADMIN), com auditoria.
 - Limite de sessões ativas por usuário/organização com revogação automática das mais antigas.
 - Proteção de brute force no login com bloqueio progressivo por tentativas inválidas (email + IP).
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
@@ -149,6 +150,7 @@ Observação: este README será mantido incrementalmente para refletir exatament
 - `appointments`
 - `doctor_schedules`
 - `domain_outbox_events`
+- `outbox_replay_audit`
 
 ## 🔐 Payload JWT Esperado
 Campos mínimos no token:
@@ -218,6 +220,7 @@ Cobertura atual da bateria:
 - `GET /health/metrics`
 - `GET /health/outbox`
 - `GET /health/alert-check`
+- `POST /outbox/replay-failed` (ADMIN)
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
 - bloqueio de conflito de horário por médico em agendamento (`400`, janela configurável)

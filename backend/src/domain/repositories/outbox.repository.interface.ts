@@ -35,6 +35,20 @@ export interface OutboxMetrics {
   average_processing_latency_ms: number;
 }
 
+export interface ReplayFailedEventsInput {
+  organization_id: string;
+  requested_by_user_id: string;
+  reason?: string;
+  limit?: number;
+  event_ids?: string[];
+}
+
+export interface ReplayFailedEventsResult {
+  requested: number;
+  replayed: number;
+  skipped: number;
+}
+
 export interface IOutboxRepository {
   enqueue(input: CreateOutboxEventInput): Promise<void>;
   findProcessable(
@@ -45,4 +59,7 @@ export interface IOutboxRepository {
   markProcessed(eventId: string): Promise<void>;
   markFailed(eventId: string, errorMessage: string): Promise<void>;
   getMetrics(): Promise<OutboxMetrics>;
+  replayFailedEvents(
+    input: ReplayFailedEventsInput,
+  ): Promise<ReplayFailedEventsResult>;
 }

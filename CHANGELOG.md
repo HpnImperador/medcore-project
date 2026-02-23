@@ -92,6 +92,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Fluxos `create`, `complete`, `cancel` e `reschedule` de agendamento migrados para gravação de evento no Outbox na mesma transação do write.
 - Endpoint operacional `GET /health/outbox` adicionado com métricas de backlog/falhas/latência do Outbox.
 - Healthcheck consolidado agora considera status do Outbox para classificar `ok/degraded/error` e acionar alerta quando backlog ultrapassa limites configurados.
+- Endpoint ADMIN `POST /outbox/replay-failed` adicionado para replay manual de eventos FAILED com auditoria persistida em `outbox_replay_audit`.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
