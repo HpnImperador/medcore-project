@@ -19,3 +19,13 @@ cd /home/sppro/medcore-project
 ## Observação
 - Este diretório é versionado para manter estrutura/documentação.
 - Os arquivos `.sql.gz` podem crescer; ajuste retenção conforme política do ambiente.
+
+## Restore (recuperação)
+Script controlado:
+```bash
+cd /home/sppro/medcore-project
+BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz CONFIRM_RESTORE=yes ./scripts/restore_db_medcore.sh
+```
+
+Observação:
+- O restore recria o schema `public` e substitui os dados atuais.
