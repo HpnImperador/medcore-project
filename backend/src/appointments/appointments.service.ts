@@ -301,6 +301,7 @@ export class AppointmentsService {
       this.getWorkdayStartHour(),
     );
     const dayEnd = this.getDayBoundary(query.date, this.getWorkdayEndHour());
+    const breakWindow = this.getBreakWindow(query.date);
 
     if (dayEnd.getTime() <= dayStart.getTime()) {
       throw new BadRequestException(
@@ -327,6 +328,21 @@ export class AppointmentsService {
       slotStartMs += intervalMs
     ) {
       const slotEndMs = slotStartMs + durationMs;
+      const nowMs = Date.now();
+
+      if (this.isSameUtcDate(query.date, new Date()) && slotStartMs <= nowMs) {
+        continue;
+      }
+
+      if (breakWindow) {
+        const overlapsBreak =
+          slotStartMs < breakWindow.end.getTime() &&
+          breakWindow.start.getTime() < slotEndMs;
+        if (overlapsBreak) {
+          continue;
+        }
+      }
+
       const overlaps = appointments.some((appointment) => {
         const appointmentStartMs = appointment.scheduled_at.getTime();
         const appointmentEndMs = appointmentStartMs + durationMs;
@@ -439,6 +455,14 @@ export class AppointmentsService {
     return this.getHourConfig('APPOINTMENT_WORKDAY_END_HOUR', 18);
   }
 
+  private getBreakStartHour(): number {
+    return this.getHourConfig('APPOINTMENT_BREAK_START_HOUR', 12);
+  }
+
+  private getBreakEndHour(): number {
+    return this.getHourConfig('APPOINTMENT_BREAK_END_HOUR', 13);
+  }
+
   private getHourConfig(envName: string, defaultValue: number): number {
     const configured = this.configService.get<string>(envName);
     const parsed = Number.parseInt(configured ?? '', 10);
@@ -459,6 +483,28 @@ export class AppointmentsService {
         0,
         0,
       ),
+    );
+  }
+
+  private getBreakWindow(baseDate: Date): { start: Date; end: Date } | null {
+    const breakStartHour = this.getBreakStartHour();
+    const breakEndHour = this.getBreakEndHour();
+
+    if (breakEndHour <= breakStartHour) {
+      return null;
+    }
+
+    return {
+      start: this.getDayBoundary(baseDate, breakStartHour),
+      end: this.getDayBoundary(baseDate, breakEndHour),
+    };
+  }
+
+  private isSameUtcDate(a: Date, b: Date): boolean {
+    return (
+      a.getUTCFullYear() === b.getUTCFullYear() &&
+      a.getUTCMonth() === b.getUTCMonth() &&
+      a.getUTCDate() === b.getUTCDate()
     );
   }
 }

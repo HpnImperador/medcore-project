@@ -49,6 +49,8 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
   - Cancelamento/Reagendamento bloqueados para agendamentos já concluídos/cancelados.
   - Motivo operacional registrado em `notes` para trilha de auditoria da consulta.
   - Bloqueio de conflito de agenda: mesmo médico não pode ter duas consultas no mesmo horário (`400`).
+  - Slots disponíveis ignoram horários passados (quando a data consultada é hoje em UTC).
+  - Slots disponíveis respeitam janela de pausa configurável (ex.: almoço).
 
 ### Webhook n8n
 - Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
@@ -139,6 +141,8 @@ Exemplo:
 - `APPOINTMENT_SLOT_INTERVAL_MINUTES`
 - `APPOINTMENT_WORKDAY_START_HOUR`
 - `APPOINTMENT_WORKDAY_END_HOUR`
+- `APPOINTMENT_BREAK_START_HOUR`
+- `APPOINTMENT_BREAK_END_HOUR`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`

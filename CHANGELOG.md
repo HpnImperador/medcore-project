@@ -74,6 +74,10 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `APPOINTMENT_SLOT_INTERVAL_MINUTES`
   - `APPOINTMENT_WORKDAY_START_HOUR`
   - `APPOINTMENT_WORKDAY_END_HOUR`
+- Slots do dia atual agora removem horários já passados.
+- Janela de pausa configurável adicionada para disponibilidade:
+  - `APPOINTMENT_BREAK_START_HOUR`
+  - `APPOINTMENT_BREAK_END_HOUR`
 - Bateria API ampliada para validar conflito de horário com retorno `400`.
 
 ## [2026-02-22]

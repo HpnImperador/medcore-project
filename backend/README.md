@@ -51,6 +51,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Agendamentos com proteção de conflito de horário por médico (mesmo horário retorna `400`).
 - Janela de conflito configurável por `APPOINTMENT_DURATION_MINUTES` (default 30).
 - Endpoint de disponibilidade: `GET /appointments/slots` (slots por médico/filial/data).
+- Slots desconsideram horários passados (no dia atual) e respeitam pausa configurável de agenda.
 - Endpoint administrativo para inspeção e limpeza de lock de login:
   - `GET /auth/login-lock` (ADMIN)
   - `POST /auth/login-lock/clear` (ADMIN)
