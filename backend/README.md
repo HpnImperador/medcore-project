@@ -52,6 +52,8 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Janela de conflito configurável por `APPOINTMENT_DURATION_MINUTES` (default 30).
 - Endpoint de disponibilidade: `GET /appointments/slots` (slots por médico/filial/data).
 - Slots desconsideram horários passados (no dia atual) e respeitam pausa configurável de agenda.
+- Slots respeitam agenda semanal ativa por médico (`doctor_schedules`) quando configurada.
+- Na ausência de agenda semanal para o dia, o cálculo usa fallback por variáveis globais (`APPOINTMENT_WORKDAY_*` e `APPOINTMENT_BREAK_*`).
 - Endpoint administrativo para inspeção e limpeza de lock de login:
   - `GET /auth/login-lock` (ADMIN)
   - `POST /auth/login-lock/clear` (ADMIN)
@@ -81,6 +83,7 @@ O seed é idempotente e garante:
 - médico demo com vínculo em `user_branches`
 - admin demo para rotas operacionais protegidas
 - paciente demo
+- agenda semanal do médico demo em `doctor_schedules` (seg-sex, 08h-18h, pausa 12h-13h)
 
 Credenciais e IDs de teste gerados/atualizados:
 - `TEST_EMAIL=medico@medcore.com`

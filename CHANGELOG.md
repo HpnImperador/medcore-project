@@ -79,6 +79,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `APPOINTMENT_BREAK_START_HOUR`
   - `APPOINTMENT_BREAK_END_HOUR`
 - Bateria API ampliada para validar conflito de horário com retorno `400`.
+- Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
+- `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
+- Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
 
 ## [2026-02-22]
 

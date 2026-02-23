@@ -298,11 +298,11 @@ model execution_entity {
   workflow_entity       workflow_entity        @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_execution_entity_workflow_id")
   execution_metadata    execution_metadata[]
   test_case_execution   test_case_execution[]
+  //  @@index([stoppedAt, status, deletedAt], map: "idx_execution_entity_stopped_at_status_deleted_at", where: raw("((\"stoppedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
+  //  @@index([waitTill, status, deletedAt], map: "idx_execution_entity_wait_till_status_deleted_at", where: raw("((\"waitTill\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
+  //  @@index([workflowId, startedAt], map: "idx_execution_entity_workflow_id_started_at", where: raw("((\"startedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
 
   @@index([deletedAt], map: "IDX_execution_entity_deletedAt")
-//  @@index([stoppedAt, status, deletedAt], map: "idx_execution_entity_stopped_at_status_deleted_at", where: raw("((\"stoppedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
-//  @@index([waitTill, status, deletedAt], map: "idx_execution_entity_wait_till_status_deleted_at", where: raw("((\"waitTill\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
-//  @@index([workflowId, startedAt], map: "idx_execution_entity_workflow_id_started_at", where: raw("((\"startedAt\" IS NOT NULL) AND (\"deletedAt\" IS NULL))"))
 }
 
 model execution_metadata {
@@ -709,28 +709,29 @@ model user_branches {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model users {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organization_id String?         @db.Uuid
-  name            String          @db.VarChar(255)
-  email           String          @unique @db.VarChar(255)
-  password_hash   String
-  role            String?         @db.VarChar(50)
-  created_at      DateTime?       @default(now()) @db.Timestamptz(6)
-  appointments    appointments[]  @relation("appointments_doctor")
-  refresh_tokens  refresh_tokens[]
-  user_branches   user_branches[]
-  organizations   organizations?  @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id  String?            @db.Uuid
+  name             String             @db.VarChar(255)
+  email            String             @unique @db.VarChar(255)
+  password_hash    String
+  role             String?            @db.VarChar(50)
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  appointments     appointments[]     @relation("appointments_doctor")
+  doctor_schedules doctor_schedules[]
+  refresh_tokens   refresh_tokens[]
+  user_branches    user_branches[]
+  organizations    organizations?     @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model variables {
-//  key       String   @unique(map: "variables_global_key_unique", where: raw("(\"projectId\" IS NULL)")) @db.VarChar(50)
+  //  key       String   @unique(map: "variables_global_key_unique", where: raw("(\"projectId\" IS NULL)")) @db.VarChar(50)
   type      String   @default("string") @db.VarChar(50)
   value     String?  @db.VarChar(255)
   id        String   @id @db.VarChar(36)
   projectId String?  @db.VarChar(36)
   project   project? @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_42f6c766f9f9d2edcc15bdd6e9b")
 
-//  @@unique([projectId, key], map: "variables_project_key_unique", where: raw("(\"projectId\" IS NOT NULL)"))
+  //  @@unique([projectId, key], map: "variables_project_key_unique", where: raw("(\"projectId\" IS NOT NULL)"))
 }
 
 model webhook_entity {
@@ -876,10 +877,11 @@ model organizations {
   created_at DateTime? @default(now()) @db.Timestamptz(6)
 
   // Adicione esta linha para o Prisma entender a relação inversa
-  patients     patients[]
-  branches     branches[]
-  users        users[]
-  appointments appointments[]
+  patients         patients[]
+  branches         branches[]
+  users            users[]
+  appointments     appointments[]
+  doctor_schedules doctor_schedules[]
 }
 
 model patients {
@@ -889,28 +891,28 @@ model patients {
   // O nome aqui deve bater com o nome do model acima (organizations)
   organization organizations @relation(fields: [organization_id], references: [id])
 
-  name       String
-  email      String?
-  phone      String?
-  document   String?
-  birth_date DateTime?
-  created_at DateTime  @default(now())
+  name         String
+  email        String?
+  phone        String?
+  document     String?
+  birth_date   DateTime?
+  created_at   DateTime       @default(now())
   appointments appointments[]
 
   @@index([organization_id])
 }
 
 model appointments {
-  id              String    @id @default(uuid()) @db.Uuid
-  organization_id String    @db.Uuid
-  branch_id       String    @db.Uuid
-  patient_id      String    @db.Uuid
-  doctor_id       String    @db.Uuid
-  scheduled_at    DateTime  @db.Timestamptz(6)
-  status          String    @default("SCHEDULED") @db.VarChar(30)
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  branch_id       String   @db.Uuid
+  patient_id      String   @db.Uuid
+  doctor_id       String   @db.Uuid
+  scheduled_at    DateTime @db.Timestamptz(6)
+  status          String   @default("SCHEDULED") @db.VarChar(30)
   notes           String?
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @updatedAt @db.Timestamptz(6)
 
   organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   branch       branches      @relation(fields: [branch_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -934,9 +936,9 @@ model refresh_tokens {
   last_used_at         DateTime? @db.Timestamptz(6)
   replaced_by_token_id String?   @db.Uuid
 
-  users                       users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  replaced_by                 refresh_tokens? @relation("refresh_token_rotation", fields: [replaced_by_token_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  other_refresh_tokens        refresh_tokens[] @relation("refresh_token_rotation")
+  users                users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  replaced_by          refresh_tokens?  @relation("refresh_token_rotation", fields: [replaced_by_token_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_refresh_tokens refresh_tokens[] @relation("refresh_token_rotation")
 
   @@index([user_id, expires_at])
   @@index([organization_id, expires_at])
@@ -955,4 +957,24 @@ model health_alert_events {
 
   @@index([created_at])
   @@index([status, created_at])
+}
+
+model doctor_schedules {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id  String   @db.Uuid
+  doctor_id        String   @db.Uuid
+  weekday          Int      @db.SmallInt
+  start_hour       Int      @db.SmallInt
+  end_hour         Int      @db.SmallInt
+  break_start_hour Int?     @db.SmallInt
+  break_end_hour   Int?     @db.SmallInt
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @updatedAt @db.Timestamptz(6)
+
+  organization organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  doctor       users         @relation(fields: [doctor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([doctor_id, weekday])
+  @@index([organization_id, doctor_id, weekday])
 }

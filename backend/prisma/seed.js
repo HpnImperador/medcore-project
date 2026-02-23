@@ -162,12 +162,50 @@ async function upsertPatient(organizationId) {
   });
 }
 
+async function upsertDoctorSchedules(organizationId, doctorId) {
+  const weekdays = [1, 2, 3, 4, 5];
+  for (const weekday of weekdays) {
+    await prisma.$executeRaw`
+      INSERT INTO doctor_schedules (
+        organization_id,
+        doctor_id,
+        weekday,
+        start_hour,
+        end_hour,
+        break_start_hour,
+        break_end_hour,
+        is_active
+      )
+      VALUES (
+        ${organizationId}::uuid,
+        ${doctorId}::uuid,
+        ${weekday},
+        8,
+        18,
+        12,
+        13,
+        true
+      )
+      ON CONFLICT (doctor_id, weekday)
+      DO UPDATE SET
+        organization_id = EXCLUDED.organization_id,
+        start_hour = EXCLUDED.start_hour,
+        end_hour = EXCLUDED.end_hour,
+        break_start_hour = EXCLUDED.break_start_hour,
+        break_end_hour = EXCLUDED.break_end_hour,
+        is_active = EXCLUDED.is_active,
+        updated_at = CURRENT_TIMESTAMP
+    `;
+  }
+}
+
 async function main() {
   const organization = await upsertOrganization();
   const branch = await upsertBranch(organization.id);
   const doctor = await upsertDoctor(organization.id);
   const admin = await upsertAdmin(organization.id);
   await upsertUserBranch(doctor.id, branch.id);
+  await upsertDoctorSchedules(organization.id, doctor.id);
   const patient = await upsertPatient(organization.id);
 
   const envContent = [

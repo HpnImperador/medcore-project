@@ -17,6 +17,18 @@ export interface DoctorEntity {
   role: string | null;
 }
 
+export interface DoctorScheduleEntity {
+  id: string;
+  organization_id: string;
+  doctor_id: string;
+  weekday: number;
+  start_hour: number;
+  end_hour: number;
+  break_start_hour: number | null;
+  break_end_hour: number | null;
+  is_active: boolean;
+}
+
 export interface CreateAppointmentRepositoryInput {
   organization_id: string;
   branch_id: string;
@@ -55,6 +67,11 @@ export interface IAppointmentsRepository {
     from: Date,
     to: Date,
   ): Promise<AppointmentEntity[]>;
+  findActiveDoctorScheduleByWeekday(
+    organizationId: string,
+    doctorId: string,
+    weekday: number,
+  ): Promise<DoctorScheduleEntity | null>;
   findByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,

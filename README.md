@@ -51,6 +51,8 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
   - Bloqueio de conflito de agenda: mesmo médico não pode ter duas consultas no mesmo horário (`400`).
   - Slots disponíveis ignoram horários passados (quando a data consultada é hoje em UTC).
   - Slots disponíveis respeitam janela de pausa configurável (ex.: almoço).
+  - Slots disponíveis respeitam agenda semanal do médico quando configurada em `doctor_schedules`.
+  - Se não houver agenda semanal ativa para o dia, o sistema aplica fallback para variáveis globais da agenda.
 
 ### Webhook n8n
 - Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
@@ -110,6 +112,7 @@ Observação: este README será mantido incrementalmente para refletir exatament
 - `user_branches`
 - `patients`
 - `appointments`
+- `doctor_schedules`
 
 ## 🔐 Payload JWT Esperado
 Campos mínimos no token:
@@ -217,6 +220,7 @@ O `prisma:seed` é idempotente e prepara base mínima para testes:
 - usuário admin demo (`admin@medcore.com` / `123456`)
 - paciente demo
 - vínculo médico-filial em `user_branches`
+- agenda semanal padrão do médico em `doctor_schedules` (segunda a sexta, 08h-18h, pausa 12h-13h)
 - gera `backend/.seed.env` com `TEST_*` e IDs para a bateria automática
 
 Fluxo rápido de validação real:

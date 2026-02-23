@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type {
   AppointmentEntity,
+  DoctorScheduleEntity,
   IAppointmentsRepository,
 } from '../domain/repositories/appointments.repository.interface';
 import type { IPatientsRepository } from '../domain/repositories/patients.repository.interface';
@@ -294,14 +295,25 @@ export class AppointmentsService {
       );
     }
 
+    const weekday = this.getUtcWeekday(query.date);
+    const doctorSchedule =
+      await this.appointmentsRepository.findActiveDoctorScheduleByWeekday(
+        currentUser.organizationId,
+        query.doctor_id,
+        weekday,
+      );
+
     const durationMinutes = this.getAppointmentDurationMinutes();
     const slotIntervalMinutes = this.getSlotIntervalMinutes(durationMinutes);
     const dayStart = this.getDayBoundary(
       query.date,
-      this.getWorkdayStartHour(),
+      this.getScheduleStartHour(doctorSchedule),
     );
-    const dayEnd = this.getDayBoundary(query.date, this.getWorkdayEndHour());
-    const breakWindow = this.getBreakWindow(query.date);
+    const dayEnd = this.getDayBoundary(
+      query.date,
+      this.getScheduleEndHour(doctorSchedule),
+    );
+    const breakWindow = this.getBreakWindow(query.date, doctorSchedule);
 
     if (dayEnd.getTime() <= dayStart.getTime()) {
       throw new BadRequestException(
@@ -486,9 +498,16 @@ export class AppointmentsService {
     );
   }
 
-  private getBreakWindow(baseDate: Date): { start: Date; end: Date } | null {
-    const breakStartHour = this.getBreakStartHour();
-    const breakEndHour = this.getBreakEndHour();
+  private getBreakWindow(
+    baseDate: Date,
+    schedule: DoctorScheduleEntity | null,
+  ): { start: Date; end: Date } | null {
+    const breakStartHour = this.getScheduleBreakStartHour(schedule);
+    const breakEndHour = this.getScheduleBreakEndHour(schedule);
+
+    if (breakStartHour === null || breakEndHour === null) {
+      return null;
+    }
 
     if (breakEndHour <= breakStartHour) {
       return null;
@@ -498,6 +517,58 @@ export class AppointmentsService {
       start: this.getDayBoundary(baseDate, breakStartHour),
       end: this.getDayBoundary(baseDate, breakEndHour),
     };
+  }
+
+  private getUtcWeekday(baseDate: Date): number {
+    return baseDate.getUTCDay();
+  }
+
+  private getScheduleStartHour(schedule: DoctorScheduleEntity | null): number {
+    if (schedule) {
+      return this.sanitizeHour(schedule.start_hour, this.getWorkdayStartHour());
+    }
+    return this.getWorkdayStartHour();
+  }
+
+  private getScheduleEndHour(schedule: DoctorScheduleEntity | null): number {
+    if (schedule) {
+      return this.sanitizeHour(schedule.end_hour, this.getWorkdayEndHour());
+    }
+    return this.getWorkdayEndHour();
+  }
+
+  private getScheduleBreakStartHour(
+    schedule: DoctorScheduleEntity | null,
+  ): number | null {
+    if (!schedule) {
+      return this.getBreakStartHour();
+    }
+    if (schedule.break_start_hour === null) {
+      return null;
+    }
+    return this.sanitizeHour(
+      schedule.break_start_hour,
+      this.getBreakStartHour(),
+    );
+  }
+
+  private getScheduleBreakEndHour(
+    schedule: DoctorScheduleEntity | null,
+  ): number | null {
+    if (!schedule) {
+      return this.getBreakEndHour();
+    }
+    if (schedule.break_end_hour === null) {
+      return null;
+    }
+    return this.sanitizeHour(schedule.break_end_hour, this.getBreakEndHour());
+  }
+
+  private sanitizeHour(hour: number, fallback: number): number {
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+      return fallback;
+    }
+    return hour;
   }
 
   private isSameUtcDate(a: Date, b: Date): boolean {

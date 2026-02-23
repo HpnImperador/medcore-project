@@ -4,6 +4,7 @@ import {
   AppointmentEntity,
   CreateAppointmentRepositoryInput,
   DoctorEntity,
+  DoctorScheduleEntity,
   FindAppointmentsFilters,
   IAppointmentsRepository,
   UpdateAppointmentRepositoryInput,
@@ -136,6 +137,32 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
         scheduled_at: 'asc',
       },
     });
+  }
+
+  findActiveDoctorScheduleByWeekday(
+    organizationId: string,
+    doctorId: string,
+    weekday: number,
+  ): Promise<DoctorScheduleEntity | null> {
+    return this.prisma.$queryRaw<DoctorScheduleEntity[]>`
+        SELECT
+          id,
+          organization_id,
+          doctor_id,
+          weekday,
+          start_hour,
+          end_hour,
+          break_start_hour,
+          break_end_hour,
+          is_active
+        FROM doctor_schedules
+        WHERE organization_id = ${organizationId}::uuid
+          AND doctor_id = ${doctorId}::uuid
+          AND weekday = ${weekday}
+          AND is_active = true
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `.then((rows) => rows[0] ?? null);
   }
 
   async completeByIdInOrganizationAndBranches(
