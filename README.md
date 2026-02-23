@@ -26,6 +26,16 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 ssh-add ~/.ssh/id_ed25519
 ```
 
+## 💾 Backup de Banco
+- Pasta versionada: `backup/`
+- Script manual: `scripts/backup_db_medcore.sh`
+- Arquivo gerado: `backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz`
+- Agendamento ativo no servidor (cron diário às 02:00):
+```cron
+0 2 * * * /home/sppro/medcore-project/scripts/backup_db_medcore.sh >> /home/sppro/medcore-project/backup/backup_cron.log 2>&1
+```
+
+
 ## 🚀 Atualizações Recentes
 
 ### Arquitetura e Multi-tenant
@@ -241,6 +251,12 @@ npm run prisma:seed
 
 cd ..
 BASE_URL=http://127.0.0.1:3000 ./scripts/bateria_api_backend.sh
+```
+
+Validação local fim a fim (comando único):
+```bash
+cd /home/sppro/medcore-project
+BASE_URL=http://127.0.0.1:3000 ./scripts/validar_backend_local.sh
 ```
 
 ## 🔎 Exemplo cURL (Agendamento)

@@ -6,6 +6,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Histórico consolidado do projeto: `../CHANGELOG.md`
 - CI backend: `../.github/workflows/backend-ci.yml`
 - Publicação automática de entrega grande: `../scripts/push_grande_entrega.sh` (com retry DNS e validação de `ssh-agent`).
+- Backup de banco em `../backup` com script `../scripts/backup_db_medcore.sh` e agendamento diário via cron.
 
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.
@@ -160,6 +161,15 @@ Script de smoke para validar integração HTTP ponta a ponta:
 - Se `ADMIN_EMAIL` e `ADMIN_PASSWORD` estiverem disponíveis, valida também:
   - `GET /auth/login-lock`
   - `POST /auth/login-lock/clear`
+
+Validação local fim a fim (comando único):
+- Arquivo: `../scripts/validar_backend_local.sh`
+- Fluxo: `docker compose up -d alloydb` + `prisma:deploy` + `prisma:seed` + bateria HTTP completa.
+- Execução:
+```bash
+cd /home/sppro/medcore-project
+BASE_URL=http://127.0.0.1:3000 ./scripts/validar_backend_local.sh
+```
 
 ## 📝 Padrão de Atualização deste README
 Sempre atualizar, a cada entrega:

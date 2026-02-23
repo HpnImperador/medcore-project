@@ -79,6 +79,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `APPOINTMENT_BREAK_START_HOUR`
   - `APPOINTMENT_BREAK_END_HOUR`
 - Bateria API ampliada para validar conflito de horário com retorno `400`.
+- Script operacional `scripts/validar_backend_local.sh` adicionado para validação local fim a fim em comando único (docker alloydb + prisma deploy + seed + bateria API).
+- Estrutura de backup adicionada com pasta `backup/` versionada e script `scripts/backup_db_medcore.sh` para dump do `medcore_db` em `.sql.gz` com retenção automática.
+- Agendamento diário de backup documentado (cron às 02:00) com log em `backup/backup_cron.log`.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
