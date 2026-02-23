@@ -30,9 +30,9 @@ ssh-add ~/.ssh/id_ed25519
 - Pasta versionada: `backup/`
 - Script manual: `scripts/backup_db_medcore.sh`
 - Arquivo gerado: `backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz`
-- Agendamento ativo no servidor (cron diário às 02:00):
+- Agendamento ativo no servidor (cron diário às 14:00):
 ```cron
-0 2 * * * /home/sppro/medcore-project/scripts/backup_db_medcore.sh >> /home/sppro/medcore-project/backup/backup_cron.log 2>&1
+0 14 * * * /home/sppro/medcore-project/scripts/backup_db_medcore.sh >> /home/sppro/medcore-project/backup/backup_cron.log 2>&1
 ```
 
 
