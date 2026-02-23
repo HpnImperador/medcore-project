@@ -21,6 +21,10 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - `LoggingInterceptor` global com auditoria de request/response.
 - `TransformInterceptor` global com envelope `{ data, meta }`.
 - `GlobalExceptionFilter` global com mapeamento de erro HTTP/Prisma.
+- Suíte de testes E2E para fluxos críticos em `test/app.e2e-spec.ts`:
+  - login JWT
+  - perfil autenticado
+  - ciclo completo de agendamentos
 
 ## [2026-02-22]
 

@@ -67,6 +67,20 @@ npm run build
 npm test -- --runInBand
 ```
 
+## 🧪 Testes E2E
+- Suíte E2E principal: `test/app.e2e-spec.ts`
+- Cobertura de fluxo:
+  - `POST /auth/login`
+  - `GET /users/me`
+  - `POST /appointments`
+  - `GET /appointments`
+  - `PATCH /appointments/:id/complete`
+
+Execução:
+```bash
+npm run test:e2e
+```
+
 ## 📝 Padrão de Atualização deste README
 Sempre atualizar, a cada entrega:
 1. `Atualizações Recentes`
