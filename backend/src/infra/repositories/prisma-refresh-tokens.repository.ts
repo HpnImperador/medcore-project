@@ -6,12 +6,52 @@ import {
   RefreshTokenEntity,
 } from '../../domain/repositories/refresh-tokens.repository.interface';
 
+interface RefreshTokensDelegate {
+  create(args: {
+    data: {
+      user_id: string;
+      organization_id: string;
+      token_hash: string;
+      expires_at: Date;
+    };
+  }): Promise<RefreshTokenEntity>;
+  findFirst(args: {
+    where: {
+      token_hash: string;
+      revoked_at: null;
+      expires_at: { gt: Date };
+    };
+  }): Promise<RefreshTokenEntity | null>;
+  update(args: {
+    where: { id: string };
+    data: {
+      revoked_at?: Date;
+      last_used_at?: Date;
+      replaced_by_token_id?: string;
+    };
+  }): Promise<RefreshTokenEntity>;
+  updateMany(args: {
+    where: {
+      token_hash: string;
+      revoked_at: null;
+    };
+    data: {
+      revoked_at: Date;
+      last_used_at: Date;
+    };
+  }): Promise<{ count: number }>;
+}
+
+interface PrismaWithRefreshTokens {
+  refresh_tokens: RefreshTokensDelegate;
+}
+
 @Injectable()
 export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(input: CreateRefreshTokenInput): Promise<RefreshTokenEntity> {
-    return this.prisma.refresh_tokens.create({
+  create(input: CreateRefreshTokenInput): Promise<RefreshTokenEntity> {
+    return this.refreshTokensDelegate.create({
       data: {
         user_id: input.user_id,
         organization_id: input.organization_id,
@@ -21,8 +61,8 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
     });
   }
 
-  async findActiveByHash(tokenHash: string): Promise<RefreshTokenEntity | null> {
-    return this.prisma.refresh_tokens.findFirst({
+  findActiveByHash(tokenHash: string): Promise<RefreshTokenEntity | null> {
+    return this.refreshTokensDelegate.findFirst({
       where: {
         token_hash: tokenHash,
         revoked_at: null,
@@ -34,7 +74,7 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
   }
 
   async revokeById(tokenId: string, replacedByTokenId?: string): Promise<void> {
-    await this.prisma.refresh_tokens.update({
+    await this.refreshTokensDelegate.update({
       where: { id: tokenId },
       data: {
         revoked_at: new Date(),
@@ -45,7 +85,7 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
   }
 
   async touchUsage(tokenId: string): Promise<void> {
-    await this.prisma.refresh_tokens.update({
+    await this.refreshTokensDelegate.update({
       where: { id: tokenId },
       data: {
         last_used_at: new Date(),
@@ -54,7 +94,7 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
   }
 
   async revokeByHash(tokenHash: string): Promise<void> {
-    await this.prisma.refresh_tokens.updateMany({
+    await this.refreshTokensDelegate.updateMany({
       where: {
         token_hash: tokenHash,
         revoked_at: null,
@@ -64,5 +104,9 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
         last_used_at: new Date(),
       },
     });
+  }
+
+  private get refreshTokensDelegate(): RefreshTokensDelegate {
+    return (this.prisma as unknown as PrismaWithRefreshTokens).refresh_tokens;
   }
 }

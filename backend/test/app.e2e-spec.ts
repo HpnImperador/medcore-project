@@ -196,26 +196,28 @@ describe('MedCore API (e2e)', () => {
   };
 
   const mockRefreshTokensRepository = {
-    create: jest.fn((input: {
-      user_id: string;
-      organization_id: string;
-      token_hash: string;
-      expires_at: Date;
-    }) => {
-      const entity = {
-        id: `rt-${refreshTokensStore.length + 1}`,
-        user_id: input.user_id,
-        organization_id: input.organization_id,
-        token_hash: input.token_hash,
-        expires_at: input.expires_at,
-        created_at: new Date(),
-        revoked_at: null,
-        last_used_at: null,
-        replaced_by_token_id: null,
-      };
-      refreshTokensStore.push(entity);
-      return Promise.resolve(entity);
-    }),
+    create: jest.fn(
+      (input: {
+        user_id: string;
+        organization_id: string;
+        token_hash: string;
+        expires_at: Date;
+      }) => {
+        const entity = {
+          id: `rt-${refreshTokensStore.length + 1}`,
+          user_id: input.user_id,
+          organization_id: input.organization_id,
+          token_hash: input.token_hash,
+          expires_at: input.expires_at,
+          created_at: new Date(),
+          revoked_at: null,
+          last_used_at: null,
+          replaced_by_token_id: null,
+        };
+        refreshTokensStore.push(entity);
+        return Promise.resolve(entity);
+      },
+    ),
     findActiveByHash: jest.fn((tokenHash: string) => {
       const found = refreshTokensStore.find(
         (item) =>

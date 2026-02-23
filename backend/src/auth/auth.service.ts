@@ -175,9 +175,7 @@ export class AuthService {
     const refreshJti = randomUUID();
     const expiresIn =
       this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d';
-    const expiresAt = new Date(
-      Date.now() + this.parseDurationToMs(expiresIn),
-    );
+    const expiresAt = new Date(Date.now() + this.parseDurationToMs(expiresIn));
 
     const refreshToken = await this.jwtService.signAsync(
       {
@@ -208,7 +206,9 @@ export class AuthService {
     };
   }
 
-  private async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+  private async verifyRefreshToken(
+    token: string,
+  ): Promise<RefreshTokenPayload> {
     try {
       return await this.jwtService.verifyAsync<RefreshTokenPayload>(token, {
         secret:

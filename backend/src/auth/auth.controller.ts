@@ -17,7 +17,9 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Rotaciona refresh token e emite novo par de tokens' })
+  @ApiOperation({
+    summary: 'Rotaciona refresh token e emite novo par de tokens',
+  })
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refresh(refreshTokenDto);
   }
