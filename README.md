@@ -34,6 +34,10 @@ ssh-add ~/.ssh/id_ed25519
 ```cron
 0 14 * * * /home/sppro/medcore-project/scripts/backup_db_medcore.sh >> /home/sppro/medcore-project/backup/backup_cron.log 2>&1
 ```
+- Teste operacional de restore agendado no servidor (cron semanal: domingo 14:30):
+```cron
+30 14 * * 0 /home/sppro/medcore-project/scripts/validar_restore_backup.sh >> /home/sppro/medcore-project/backup/restore_check_cron.log 2>&1
+```
 - Script de restore controlado: `scripts/restore_db_medcore.sh`
 - Teste operacional de restore (base temporária): `scripts/validar_restore_backup.sh`
 - Exemplo de restore (destrutivo):

@@ -13,7 +13,11 @@ cd /home/sppro/medcore-project
 ```
 
 ## Agendamento (cron)
-- Rotina diária às 02:00 (horário do servidor).
+- Backup diário às 14:00 (horário do servidor).
+- Teste de restore semanal no domingo às 14:30 (base temporária).
+- Logs:
+- `backup/backup_cron.log`
+- `backup/restore_check_cron.log`
 - Com retenção padrão de 15 dias.
 
 ## Observação

@@ -1,3 +1,4 @@
 # Mantém estrutura e documentação versionadas, sem subir dumps binários.
 *.sql.gz
 backup_cron.log
+restore_check_cron.log

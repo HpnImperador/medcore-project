@@ -84,6 +84,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Agendamento diário de backup documentado (cron às 14:00) com log em `backup/backup_cron.log`.
 - Script de restore controlado `scripts/restore_db_medcore.sh` adicionado para recuperação via dump `.sql.gz`, com confirmação explícita (`CONFIRM_RESTORE=yes`).
 - Script `scripts/validar_restore_backup.sh` adicionado para teste operacional de restore em base temporária (`medcore_restore_check`).
+- Agendamento semanal do teste operacional de restore adicionado no servidor (domingo às 14:30) com log em `backup/restore_check_cron.log`.
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).
