@@ -52,6 +52,11 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Alertas operacionais adicionados com endpoint `GET /health/alert-check` e serviço de notificação por webhook (`HEALTH_ALERT_WEBHOOK_URL`) com cooldown (`HEALTH_ALERT_COOLDOWN_MINUTES`).
 - Logging HTTP migrado para formato JSON estruturado no `LoggingInterceptor`.
 - Bateria API ampliada para validar `GET /health/alert-check`.
+- Hardening adicional de autenticação com bloqueio progressivo de login por tentativas inválidas (chave `email+ip`).
+- Novas variáveis de configuração de proteção de login:
+  - `AUTH_MAX_FAILED_ATTEMPTS`
+  - `AUTH_ATTEMPT_WINDOW_MINUTES`
+  - `AUTH_LOCK_MINUTES`
 
 ## [2026-02-22]
 

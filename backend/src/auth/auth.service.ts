@@ -1,5 +1,11 @@
 import { ConfigService } from '@nestjs/config';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
 import { createHash, randomUUID } from 'crypto';
@@ -11,6 +17,7 @@ import type { IRefreshTokensRepository } from '../domain/repositories/refresh-to
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LogoutDto } from './dto/logout.dto';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
+import { LoginAttemptService } from './login-attempt.service';
 
 interface RefreshTokenPayload {
   sub: string;
@@ -28,13 +35,24 @@ export class AuthService {
     private readonly refreshTokensRepository: IRefreshTokensRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly loginAttemptService: LoginAttemptService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, clientIp: string) {
+    const loginKey = this.buildLoginAttemptKey(dto.email, clientIp);
+    const lockStatus = this.loginAttemptService.checkLock(loginKey);
+    if (lockStatus.locked) {
+      throw new HttpException(
+        `Muitas tentativas de login inválidas. Tente novamente em ${lockStatus.retry_after_seconds}s.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     await this.refreshTokensRepository.purgeExpiredAndRevoked();
     const user = await this.userRepository.findByEmail(dto.email);
 
     if (!user || !user.organization_id) {
+      this.loginAttemptService.registerFailure(loginKey);
       throw new UnauthorizedException('Credenciais inválidas.');
     }
 
@@ -43,8 +61,11 @@ export class AuthService {
       user.password_hash,
     );
     if (!isValidPassword) {
+      this.loginAttemptService.registerFailure(loginKey);
       throw new UnauthorizedException('Credenciais inválidas.');
     }
+
+    this.loginAttemptService.clear(loginKey);
 
     const role = normalizeRole(user.role);
     const branchIds = user.user_branches.map((entry) => entry.branch_id);
@@ -324,5 +345,11 @@ export class AuthService {
     }
 
     return numericValue * 1000;
+  }
+
+  private buildLoginAttemptKey(email: string, clientIp: string): string {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedIp = clientIp.trim().toLowerCase() || 'ip-indisponivel';
+    return `${normalizedEmail}|${normalizedIp}`;
   }
 }

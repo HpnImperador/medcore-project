@@ -47,6 +47,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Refresh tokens persistidos com hash e rotação segura.
 - Limite de sessões ativas com revogação automática dos refresh tokens mais antigos.
 - Política de higiene aplicada em autenticação: purge de tokens expirados/revogados.
+- Login protegido contra brute force com bloqueio progressivo por tentativas inválidas (email + IP).
 
 ## ⚙️ Execução Local
 ```bash

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -8,6 +8,11 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
 
+interface RequestWithIp {
+  ip?: string;
+  headers?: Record<string, string | string[] | undefined>;
+}
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -15,8 +20,14 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Autentica usuário e retorna token JWT' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() request: RequestWithIp) {
+    const xForwardedFor = request.headers?.['x-forwarded-for'];
+    const forwardedIp = Array.isArray(xForwardedFor)
+      ? xForwardedFor[0]
+      : xForwardedFor?.split(',')[0]?.trim();
+    const clientIp = forwardedIp ?? request.ip ?? 'ip-indisponivel';
+
+    return this.authService.login(loginDto, clientIp);
   }
 
   @Post('refresh')

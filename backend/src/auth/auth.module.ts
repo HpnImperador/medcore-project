@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaUsersRepository } from '../infra/repositories/prisma-users.repository';
 import { PrismaRefreshTokensRepository } from '../infra/repositories/prisma-refresh-tokens.repository';
 import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
+import { LoginAttemptService } from './login-attempt.service';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
   providers: [
     PrismaService,
     AuthService,
+    LoginAttemptService,
     {
       provide: REPOSITORY_TOKENS.USERS,
       useClass: PrismaUsersRepository,

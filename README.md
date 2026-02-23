@@ -82,6 +82,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Endpoint `POST /auth/logout` implementado para revogação de refresh token.
 - Endpoint `POST /auth/logout-all` implementado para revogar todas as sessões do usuário.
 - Limite de sessões ativas por usuário/organização com revogação automática das mais antigas.
+- Proteção de brute force no login com bloqueio progressivo por tentativas inválidas (email + IP).
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
 - Proteção de rotas com `JwtAuthGuard` (Passport JWT).
 - RBAC implementado com `Role`, `@Roles` e `RolesGuard`.
@@ -125,6 +126,9 @@ Exemplo:
 - `JWT_EXPIRES_IN`
 - `JWT_REFRESH_EXPIRES_IN`
 - `JWT_MAX_ACTIVE_SESSIONS`
+- `AUTH_MAX_FAILED_ATTEMPTS`
+- `AUTH_ATTEMPT_WINDOW_MINUTES`
+- `AUTH_LOCK_MINUTES`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
