@@ -350,6 +350,28 @@ describe('MedCore API (e2e)', () => {
     expect(refreshed.refresh_token).not.toBe(login.refresh_token);
   });
 
+  it('deve revogar refresh token em /auth/logout', async () => {
+    const loginResponse = await request(baseUrl)
+      .post('/auth/login')
+      .send({
+        email: 'medico@medcore.com',
+        password: '123456',
+      })
+      .expect(201);
+
+    const login = dataOf<LoginData>(loginResponse);
+
+    const response = await request(baseUrl)
+      .post('/auth/logout')
+      .send({
+        refresh_token: login.refresh_token,
+      })
+      .expect(201);
+
+    const logout = dataOf<{ success: boolean }>(response);
+    expect(logout.success).toBe(true);
+  });
+
   it('deve retornar 401 para login inválido', async () => {
     await request(baseUrl)
       .post('/auth/login')

@@ -152,6 +152,12 @@ export class AuthService {
     organizationId: string;
     branchIds: string[];
   }): Promise<string> {
+    const expiresIn = Math.floor(
+      this.parseDurationToMs(
+        this.configService.get<string>('JWT_EXPIRES_IN') ?? '12h',
+      ) / 1000,
+    );
+
     return this.jwtService.signAsync(
       {
         sub: params.userId,
@@ -163,7 +169,7 @@ export class AuthService {
       {
         secret:
           this.configService.get<string>('JWT_SECRET') ?? 'medcore-dev-secret',
-        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') ?? '12h',
+        expiresIn,
       },
     );
   }
@@ -173,9 +179,14 @@ export class AuthService {
     organizationId: string;
   }): Promise<{ token: string; id: string }> {
     const refreshJti = randomUUID();
-    const expiresIn =
+    const refreshDuration =
       this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d';
-    const expiresAt = new Date(Date.now() + this.parseDurationToMs(expiresIn));
+    const expiresIn = Math.floor(
+      this.parseDurationToMs(refreshDuration) / 1000,
+    );
+    const expiresAt = new Date(
+      Date.now() + this.parseDurationToMs(refreshDuration),
+    );
 
     const refreshToken = await this.jwtService.signAsync(
       {

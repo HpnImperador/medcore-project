@@ -8,6 +8,8 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.
 - Implementação de autenticação com `POST /auth/login`.
+- Implementação de rotação de sessão com `POST /auth/refresh`.
+- Implementação de revogação de sessão com `POST /auth/logout`.
 - Implementação de perfil autenticado com `GET /users/me`.
 - Implementação de RBAC com `Role`, `@Roles` e `RolesGuard`.
 - Implementação global de `LoggingInterceptor`, `TransformInterceptor` e `GlobalExceptionFilter`.
@@ -38,6 +40,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Escopo de filial por `branch_ids` no token.
 - Regra de vínculo médico-filial via `user_branches`.
 - Login exige `password_hash` em formato bcrypt (`$2a$`, `$2b$` ou `$2y$`).
+- Refresh tokens persistidos com hash e rotação segura.
 
 ## ⚙️ Execução Local
 ```bash
@@ -84,6 +87,8 @@ npm test -- --runInBand
 - Suíte E2E principal: `test/app.e2e-spec.ts`
 - Cobertura de fluxo:
   - `POST /auth/login`
+  - `POST /auth/refresh`
+  - `POST /auth/logout`
   - `GET /users/me`
   - `POST /appointments`
   - `GET /appointments`

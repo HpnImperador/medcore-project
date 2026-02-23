@@ -25,6 +25,10 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - perfil autenticado
   - ciclo completo de agendamentos
 - Hardening de autenticação: remoção do fallback de senha em texto plano; login agora aceita apenas `password_hash` bcrypt.
+- Rotação de sessão implementada com refresh token:
+  - `POST /auth/refresh`
+  - `POST /auth/logout`
+- Persistência de refresh tokens com hash em banco (`refresh_tokens`).
 
 ## [2026-02-22]
 

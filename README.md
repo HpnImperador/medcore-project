@@ -51,6 +51,8 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 
 ### Autenticação
 - Endpoint `POST /auth/login` implementado com emissão de JWT.
+- Endpoint `POST /auth/refresh` implementado com rotação segura de refresh token.
+- Endpoint `POST /auth/logout` implementado para revogação de refresh token.
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
 - Proteção de rotas com `JwtAuthGuard` (Passport JWT).
 - RBAC implementado com `Role`, `@Roles` e `RolesGuard`.
@@ -90,6 +92,9 @@ Exemplo:
 ## ⚙️ Variáveis de Ambiente (backend/.env)
 - `DATABASE_URL`
 - `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+- `JWT_EXPIRES_IN`
+- `JWT_REFRESH_EXPIRES_IN`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
 
 ## 🧪 Testes
