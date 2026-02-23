@@ -104,6 +104,12 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Script `scripts/testar_outbox_cleanup.sh` adicionado para validação operacional isolada do fluxo de limpeza/auditoria do Outbox com login admin automático.
 - Bateria principal (`scripts/bateria_api_backend.sh`) passou a suportar flag `ENABLE_OUTBOX_CLEANUP_CHECK` para controlar a validação de cleanup/auditoria do Outbox.
 - Pipeline CI do backend (`.github/workflows/backend-ci.yml`) ampliado para executar também `scripts/testar_outbox_cleanup.sh`.
+- Endpoints admin de governança do Outbox adicionados:
+- `GET /outbox/audit/export` (JSON/CSV com filtro temporal)
+- `POST /outbox/audit/cleanup` (retenção de auditorias com dry-run)
+- Auditorias de Outbox enriquecidas com `ip_address`, `user_agent` e `correlation_id`.
+- Hardening de proteção dos endpoints admin de Outbox com rate limit configurável por `OUTBOX_ADMIN_RATE_LIMIT_*`.
+- Automação de limpeza passou a incluir retenção de auditorias (`OUTBOX_AUTO_AUDIT_CLEANUP_ENABLED` e `OUTBOX_AUDIT_RETENTION_DAYS`).
 - Agenda semanal por médico adicionada com tabela `doctor_schedules` e migration dedicada.
 - `GET /appointments/slots` evoluído para priorizar agenda semanal ativa por dia da semana (`doctor_schedules`) com fallback para variáveis globais de agenda.
 - Seed idempotente atualizado para criar/atualizar agenda semanal padrão do médico demo (segunda a sexta, 08h-18h, pausa 12h-13h).

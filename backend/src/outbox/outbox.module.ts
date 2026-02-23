@@ -10,6 +10,7 @@ import { OutboxAdminService } from './outbox-admin.service';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { OutboxMaintenanceService } from './outbox-maintenance.service';
+import { OutboxAdminRateLimitGuard } from './outbox-admin-rate-limit.guard';
 
 @Module({
   controllers: [OutboxAdminController],
@@ -22,6 +23,7 @@ import { OutboxMaintenanceService } from './outbox-maintenance.service';
     OutboxAdminService,
     JwtStrategy,
     RolesGuard,
+    OutboxAdminRateLimitGuard,
     {
       provide: REPOSITORY_TOKENS.OUTBOX,
       useClass: PrismaOutboxRepository,

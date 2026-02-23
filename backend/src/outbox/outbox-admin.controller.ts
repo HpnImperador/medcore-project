@@ -1,25 +1,37 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Role } from '../common/auth/role.enum';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { CleanupOutboxAuditsDto } from './dto/cleanup-outbox-audits.dto';
 import { CleanupOutboxEventsDto } from './dto/cleanup-outbox-events.dto';
+import { ExportOutboxAuditDto } from './dto/export-outbox-audit.dto';
 import { ListOutboxEventsDto } from './dto/list-outbox-events.dto';
 import { ListOutboxReplayAuditDto } from './dto/list-outbox-replay-audit.dto';
 import { ReplayFailedEventsDto } from './dto/replay-failed-events.dto';
+import { OutboxAdminRateLimitGuard } from './outbox-admin-rate-limit.guard';
 import { OutboxAdminService } from './outbox-admin.service';
 
 @ApiTags('Outbox')
 @Controller('outbox')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, OutboxAdminRateLimitGuard)
 @ApiBearerAuth('JWT-auth')
 export class OutboxAdminController {
   constructor(private readonly outboxAdminService: OutboxAdminService) {}
@@ -84,6 +96,22 @@ export class OutboxAdminController {
     return this.outboxAdminService.listMaintenanceAudit(dto, currentUser);
   }
 
+  @Get('audit/export')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary:
+      'Exporta auditoria do Outbox (replay ou manutenção) em formato JSON/CSV com filtro temporal',
+  })
+  @ApiOkResponse({
+    description: 'Exportação de auditoria executada com sucesso.',
+  })
+  async exportAudit(
+    @Query() dto: ExportOutboxAuditDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.outboxAdminService.exportAudit(dto, currentUser);
+  }
+
   @Post('replay-failed')
   @Roles(Role.ADMIN)
   @ApiOperation({
@@ -96,8 +124,13 @@ export class OutboxAdminController {
   async replayFailed(
     @Body() dto: ReplayFailedEventsDto,
     @CurrentUser() currentUser: AuthenticatedUser,
+    @Req() request: Request,
   ) {
-    return this.outboxAdminService.replayFailedEvents(dto, currentUser);
+    return this.outboxAdminService.replayFailedEvents(
+      dto,
+      currentUser,
+      this.extractAuditContext(request),
+    );
   }
 
   @Post('cleanup')
@@ -112,7 +145,58 @@ export class OutboxAdminController {
   async cleanup(
     @Body() dto: CleanupOutboxEventsDto,
     @CurrentUser() currentUser: AuthenticatedUser,
+    @Req() request: Request,
   ) {
-    return this.outboxAdminService.cleanupEvents(dto, currentUser);
+    return this.outboxAdminService.cleanupEvents(
+      dto,
+      currentUser,
+      this.extractAuditContext(request),
+    );
+  }
+
+  @Post('audit/cleanup')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary:
+      'Executa limpeza de retenção das tabelas de auditoria do Outbox (dry-run por padrão)',
+  })
+  @ApiOkResponse({
+    description: 'Limpeza de auditorias do Outbox executada com sucesso.',
+  })
+  async cleanupAudits(
+    @Body() dto: CleanupOutboxAuditsDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    return this.outboxAdminService.cleanupAudits(
+      dto,
+      currentUser,
+      this.extractAuditContext(request),
+    );
+  }
+
+  private extractAuditContext(request: Request) {
+    const forwardedFor = request.headers['x-forwarded-for'];
+    const ipAddress =
+      typeof forwardedFor === 'string'
+        ? forwardedFor.split(',')[0].trim()
+        : request.ip || request.socket.remoteAddress || undefined;
+    const userAgentHeader = request.headers['user-agent'];
+    const userAgent =
+      typeof userAgentHeader === 'string'
+        ? userAgentHeader.slice(0, 500)
+        : undefined;
+    const correlationHeader =
+      request.headers['x-correlation-id'] ?? request.headers['x-request-id'];
+    const correlationId =
+      typeof correlationHeader === 'string'
+        ? correlationHeader.slice(0, 120)
+        : `outbox-${Date.now()}`;
+
+    return {
+      ip_address: ipAddress,
+      user_agent: userAgent,
+      correlation_id: correlationId,
+    };
   }
 }

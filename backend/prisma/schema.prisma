@@ -1006,6 +1006,9 @@ model outbox_replay_audit {
   requested_by_user_id String   @db.Uuid
   reason               String?  @db.VarChar(500)
   mode                 String   @db.VarChar(20)
+  ip_address           String?  @db.VarChar(64)
+  user_agent           String?  @db.VarChar(500)
+  correlation_id       String?  @db.VarChar(120)
   created_at           DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([outbox_event_id, created_at])
@@ -1019,6 +1022,9 @@ model outbox_maintenance_audit {
   action               String   @db.VarChar(40)
   criteria             Json
   affected_count       Int
+  ip_address           String?  @db.VarChar(64)
+  user_agent           String?  @db.VarChar(500)
+  correlation_id       String?  @db.VarChar(120)
   created_at           DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([organization_id, created_at])

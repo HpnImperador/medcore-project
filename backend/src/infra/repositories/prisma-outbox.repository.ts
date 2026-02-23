@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  CleanupOutboxAuditsInput,
+  CleanupOutboxAuditsResult,
   CleanupOutboxEventsInput,
   CleanupOutboxEventsResult,
   CreateOutboxEventInput,
   IOutboxRepository,
+  ListOutboxAuditInput,
   ListOutboxEventsInput,
   OutboxEventEntity,
   OutboxMaintenanceAuditEntry,
@@ -188,12 +191,17 @@ export class PrismaOutboxRepository implements IOutboxRepository {
   }
 
   listReplayAudit(
-    organizationId: string,
-    limit: number,
+    input: ListOutboxAuditInput,
   ): Promise<OutboxReplayAuditEntry[]> {
     const normalizedLimit =
-      Number.isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 200);
+      Number.isNaN(input.limit ?? 0) || (input.limit ?? 0) <= 0
+        ? 20
+        : Math.min(input.limit ?? 20, 5000);
 
+    const filters = this.buildAuditFilters(
+      Prisma.raw('outbox_replay_audit'),
+      input,
+    );
     return this.prisma.$queryRaw<OutboxReplayAuditEntry[]>`
       SELECT
         id,
@@ -202,20 +210,29 @@ export class PrismaOutboxRepository implements IOutboxRepository {
         requested_by_user_id,
         reason,
         mode,
+        ip_address,
+        user_agent,
+        correlation_id,
         created_at
       FROM outbox_replay_audit
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE ${Prisma.join(filters, ' AND ')}
       ORDER BY created_at DESC
       LIMIT ${normalizedLimit}
     `;
   }
 
-  async listOrganizationsWithEvents(): Promise<string[]> {
+  async listOrganizationsForMaintenance(): Promise<string[]> {
     const rows = await this.prisma.$queryRaw<
       Array<{ organization_id: string }>
     >`
       SELECT DISTINCT organization_id::text AS organization_id
-      FROM domain_outbox_events
+      FROM (
+        SELECT organization_id FROM domain_outbox_events
+        UNION
+        SELECT organization_id FROM outbox_replay_audit
+        UNION
+        SELECT organization_id FROM outbox_maintenance_audit
+      ) t
       WHERE organization_id IS NOT NULL
     `;
 
@@ -223,12 +240,17 @@ export class PrismaOutboxRepository implements IOutboxRepository {
   }
 
   listMaintenanceAudit(
-    organizationId: string,
-    limit: number,
+    input: ListOutboxAuditInput,
   ): Promise<OutboxMaintenanceAuditEntry[]> {
     const normalizedLimit =
-      Number.isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 200);
+      Number.isNaN(input.limit ?? 0) || (input.limit ?? 0) <= 0
+        ? 20
+        : Math.min(input.limit ?? 20, 5000);
 
+    const filters = this.buildAuditFilters(
+      Prisma.raw('outbox_maintenance_audit'),
+      input,
+    );
     return this.prisma.$queryRaw<OutboxMaintenanceAuditEntry[]>`
       SELECT
         id,
@@ -237,9 +259,12 @@ export class PrismaOutboxRepository implements IOutboxRepository {
         action,
         criteria,
         affected_count,
+        ip_address,
+        user_agent,
+        correlation_id,
         created_at
       FROM outbox_maintenance_audit
-      WHERE organization_id = ${organizationId}::uuid
+      WHERE ${Prisma.join(filters, ' AND ')}
       ORDER BY created_at DESC
       LIMIT ${normalizedLimit}
     `;
@@ -279,14 +304,20 @@ export class PrismaOutboxRepository implements IOutboxRepository {
             organization_id,
             requested_by_user_id,
             reason,
-            mode
+            mode,
+            ip_address,
+            user_agent,
+            correlation_id
           )
           VALUES (
             NULL,
             ${input.organization_id}::uuid,
             ${input.requested_by_user_id}::uuid,
             ${input.reason ?? 'manual_replay_without_failed_events'},
-            ${mode}
+            ${mode},
+            ${input.ip_address ?? null},
+            ${input.user_agent ?? null},
+            ${input.correlation_id ?? null}
           )
         `;
         return {
@@ -314,14 +345,20 @@ export class PrismaOutboxRepository implements IOutboxRepository {
           organization_id,
           requested_by_user_id,
           reason,
-          mode
+          mode,
+          ip_address,
+          user_agent,
+          correlation_id
         )
         SELECT
           e.id,
           e.organization_id,
           ${input.requested_by_user_id}::uuid,
           ${input.reason ?? null},
-          ${mode}
+          ${mode},
+          ${input.ip_address ?? null},
+          ${input.user_agent ?? null},
+          ${input.correlation_id ?? null}
         FROM domain_outbox_events e
         WHERE e.id = ANY(${ids}::uuid[])
       `;
@@ -369,7 +406,10 @@ export class PrismaOutboxRepository implements IOutboxRepository {
         requested_by_user_id,
         action,
         criteria,
-        affected_count
+        affected_count,
+        ip_address,
+        user_agent,
+        correlation_id
       )
       VALUES (
         ${input.organization_id}::uuid,
@@ -380,7 +420,10 @@ export class PrismaOutboxRepository implements IOutboxRepository {
           retention_days: safeRetentionDays,
           dry_run: input.dry_run,
         })}::jsonb,
-        ${affectedCount}
+        ${affectedCount},
+        ${input.ip_address ?? null},
+        ${input.user_agent ?? null},
+        ${input.correlation_id ?? null}
       )
     `;
 
@@ -388,5 +431,107 @@ export class PrismaOutboxRepository implements IOutboxRepository {
       deleted_count: affectedCount,
       dry_run: input.dry_run,
     };
+  }
+
+  async cleanupAudits(
+    input: CleanupOutboxAuditsInput,
+  ): Promise<CleanupOutboxAuditsResult> {
+    const safeRetentionDays = Math.min(Math.max(input.retention_days, 1), 3650);
+
+    const replayRows = await this.prisma.$queryRaw<
+      Array<{ deleted_count: number }>
+    >`
+      SELECT COUNT(*)::int AS deleted_count
+      FROM outbox_replay_audit
+      WHERE organization_id = ${input.organization_id}::uuid
+        AND created_at <
+          (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+    `;
+    const replayDeletedCount = replayRows[0]?.deleted_count ?? 0;
+
+    const maintenanceRows = await this.prisma.$queryRaw<
+      Array<{ deleted_count: number }>
+    >`
+      SELECT COUNT(*)::int AS deleted_count
+      FROM outbox_maintenance_audit
+      WHERE organization_id = ${input.organization_id}::uuid
+        AND created_at <
+          (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+    `;
+    const maintenanceDeletedCount = maintenanceRows[0]?.deleted_count ?? 0;
+
+    if (!input.dry_run) {
+      if (replayDeletedCount > 0) {
+        await this.prisma.$executeRaw`
+          DELETE FROM outbox_replay_audit
+          WHERE organization_id = ${input.organization_id}::uuid
+            AND created_at <
+              (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+        `;
+      }
+      if (maintenanceDeletedCount > 0) {
+        await this.prisma.$executeRaw`
+          DELETE FROM outbox_maintenance_audit
+          WHERE organization_id = ${input.organization_id}::uuid
+            AND created_at <
+              (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+        `;
+      }
+    }
+
+    const totalDeletedCount = replayDeletedCount + maintenanceDeletedCount;
+
+    await this.prisma.$executeRaw`
+      INSERT INTO outbox_maintenance_audit (
+        organization_id,
+        requested_by_user_id,
+        action,
+        criteria,
+        affected_count,
+        ip_address,
+        user_agent,
+        correlation_id
+      )
+      VALUES (
+        ${input.organization_id}::uuid,
+        ${input.requested_by_user_id}::uuid,
+        'CLEANUP_AUDIT',
+        ${JSON.stringify({
+          retention_days: safeRetentionDays,
+          dry_run: input.dry_run,
+          replay_deleted_count: replayDeletedCount,
+          maintenance_deleted_count: maintenanceDeletedCount,
+        })}::jsonb,
+        ${totalDeletedCount},
+        ${input.ip_address ?? null},
+        ${input.user_agent ?? null},
+        ${input.correlation_id ?? null}
+      )
+    `;
+
+    return {
+      replay_deleted_count: replayDeletedCount,
+      maintenance_deleted_count: maintenanceDeletedCount,
+      total_deleted_count: totalDeletedCount,
+      dry_run: input.dry_run,
+    };
+  }
+
+  private buildAuditFilters(
+    tableAlias: Prisma.Sql,
+    input: ListOutboxAuditInput,
+  ): Prisma.Sql[] {
+    const filters: Prisma.Sql[] = [
+      Prisma.sql`${tableAlias}.organization_id = ${input.organization_id}::uuid`,
+    ];
+
+    if (input.from) {
+      filters.push(Prisma.sql`${tableAlias}.created_at >= ${input.from}`);
+    }
+    if (input.to) {
+      filters.push(Prisma.sql`${tableAlias}.created_at <= ${input.to}`);
+    }
+
+    return filters;
   }
 }

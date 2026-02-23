@@ -32,6 +32,8 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - `GET /outbox/replay-audit`
 - `GET /outbox/maintenance-audit`
 - `POST /outbox/cleanup` (limpeza controlada com `dry_run=true` por padrão)
+- `GET /outbox/audit/export` (JSON/CSV com filtro temporal)
+- `POST /outbox/audit/cleanup` (retenção de auditorias com `dry_run`)
 - Limpeza automática do Outbox com retenção configurável, guarda de ambiente e auditoria (`OutboxMaintenanceService`).
 - Processador assíncrono de Outbox para entrega de eventos ao n8n.
 - Healthchecks e métricas básicas de processo (`/health/*`).
@@ -115,7 +117,11 @@ OUTBOX_AUTO_CLEANUP_INTERVAL_MS=86400000
 OUTBOX_AUTO_CLEANUP_RETENTION_DAYS=30
 OUTBOX_AUTO_CLEANUP_INCLUDE_FAILED=false
 OUTBOX_AUTO_CLEANUP_DRY_RUN=false
+OUTBOX_AUTO_AUDIT_CLEANUP_ENABLED=true
+OUTBOX_AUDIT_RETENTION_DAYS=90
 OUTBOX_MAINTENANCE_SYSTEM_USER_ID=00000000-0000-0000-0000-000000000000
+OUTBOX_ADMIN_RATE_LIMIT_WINDOW_SECONDS=60
+OUTBOX_ADMIN_RATE_LIMIT_MAX_REQUESTS=120
 ```
 
 Recomendação de rollout:
@@ -203,10 +209,11 @@ Script de smoke para validar integração HTTP ponta a ponta:
   - `GET /auth/login-lock`
   - `POST /auth/login-lock/clear`
 - `ENABLE_OUTBOX_CLEANUP_CHECK=1` habilita validação do fluxo admin de cleanup/auditoria do Outbox dentro da bateria.
+- A bateria valida também export de auditoria (`GET /outbox/audit/export`) e retenção de auditoria (`POST /outbox/audit/cleanup`).
 
 Teste operacional focado no cleanup do Outbox:
 - Arquivo: `../scripts/testar_outbox_cleanup.sh`
-- Fluxo: login admin -> `GET /outbox/maintenance-audit` -> `POST /outbox/cleanup` -> `GET /outbox/maintenance-audit`.
+- Fluxo: login admin -> auditoria inicial -> cleanup dry-run -> auditoria pós-cleanup -> export JSON/CSV -> cleanup de auditorias (dry-run).
 
 Validação local fim a fim (comando único):
 - Arquivo: `../scripts/validar_backend_local.sh`

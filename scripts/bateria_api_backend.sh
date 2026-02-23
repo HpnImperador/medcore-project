@@ -251,6 +251,20 @@ JSON
       fail "GET /outbox/replay-audit falhou (HTTP $CODE)."
     fi
 
+    CODE=$(http_code GET "$BASE_URL/outbox/audit/export?type=maintenance&format=json&limit=5" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/audit/export (json) falhou (HTTP $CODE)."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/outbox/audit/export?type=replay&format=csv&limit=5" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/audit/export (csv) falhou (HTTP $CODE)."
+    fi
+
     if [[ "$ENABLE_OUTBOX_CLEANUP_CHECK" == "1" ]]; then
       CLEANUP_PAYLOAD=$(cat <<JSON
 {"retention_days":30,"include_failed":false,"dry_run":true}
@@ -270,6 +284,19 @@ JSON
       if [[ "$CODE" != "200" ]]; then
         cat /tmp/medcore_bateria_body.json
         fail "GET /outbox/maintenance-audit falhou (HTTP $CODE)."
+      fi
+
+      AUDIT_CLEANUP_PAYLOAD=$(cat <<JSON
+{"retention_days":90,"dry_run":true}
+JSON
+)
+      CODE=$(http_code POST "$BASE_URL/outbox/audit/cleanup" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "$AUDIT_CLEANUP_PAYLOAD")
+      if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+        cat /tmp/medcore_bateria_body.json
+        fail "POST /outbox/audit/cleanup falhou (HTTP $CODE)."
       fi
     else
       warn "ENABLE_OUTBOX_CLEANUP_CHECK=0. Pulando validação de cleanup/maintenance-audit."

@@ -89,4 +89,34 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Auditoria pós-cleanup validada."
 
+CODE=$(http_code GET "$BASE_URL/outbox/audit/export?type=maintenance&format=json&limit=$LIMIT" \
+  -H "Authorization: Bearer $TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_outbox_cleanup_body.json
+  fail "GET /outbox/audit/export (json) falhou (HTTP $CODE)."
+fi
+ok "Export JSON de auditoria validado."
+
+CODE=$(http_code GET "$BASE_URL/outbox/audit/export?type=replay&format=csv&limit=$LIMIT" \
+  -H "Authorization: Bearer $TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_outbox_cleanup_body.json
+  fail "GET /outbox/audit/export (csv) falhou (HTTP $CODE)."
+fi
+ok "Export CSV de auditoria validado."
+
+AUDIT_CLEANUP_PAYLOAD=$(cat <<JSON
+{"retention_days":90,"dry_run":true}
+JSON
+)
+CODE=$(http_code POST "$BASE_URL/outbox/audit/cleanup" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$AUDIT_CLEANUP_PAYLOAD")
+if [[ "$CODE" != "200" && "$CODE" != "201" ]]; then
+  cat /tmp/medcore_outbox_cleanup_body.json
+  fail "POST /outbox/audit/cleanup falhou (HTTP $CODE)."
+fi
+ok "Retenção de auditoria validada."
+
 echo "Teste finalizado com sucesso."

@@ -41,6 +41,9 @@ export interface ReplayFailedEventsInput {
   reason?: string;
   limit?: number;
   event_ids?: string[];
+  ip_address?: string;
+  user_agent?: string;
+  correlation_id?: string;
 }
 
 export interface ReplayFailedEventsResult {
@@ -64,6 +67,9 @@ export interface OutboxReplayAuditEntry {
   requested_by_user_id: string;
   reason: string | null;
   mode: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  correlation_id: string | null;
   created_at: Date;
 }
 
@@ -73,6 +79,9 @@ export interface CleanupOutboxEventsInput {
   retention_days: number;
   include_failed: boolean;
   dry_run: boolean;
+  ip_address?: string;
+  user_agent?: string;
+  correlation_id?: string;
 }
 
 export interface CleanupOutboxEventsResult {
@@ -87,7 +96,34 @@ export interface OutboxMaintenanceAuditEntry {
   action: string;
   criteria: unknown;
   affected_count: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  correlation_id: string | null;
   created_at: Date;
+}
+
+export interface ListOutboxAuditInput {
+  organization_id: string;
+  limit?: number;
+  from?: Date;
+  to?: Date;
+}
+
+export interface CleanupOutboxAuditsInput {
+  organization_id: string;
+  requested_by_user_id: string;
+  retention_days: number;
+  dry_run: boolean;
+  ip_address?: string;
+  user_agent?: string;
+  correlation_id?: string;
+}
+
+export interface CleanupOutboxAuditsResult {
+  replay_deleted_count: number;
+  maintenance_deleted_count: number;
+  total_deleted_count: number;
+  dry_run: boolean;
 }
 
 export interface IOutboxRepository {
@@ -102,13 +138,11 @@ export interface IOutboxRepository {
   getMetrics(): Promise<OutboxMetrics>;
   listEvents(input: ListOutboxEventsInput): Promise<OutboxEventEntity[]>;
   listReplayAudit(
-    organizationId: string,
-    limit: number,
+    input: ListOutboxAuditInput,
   ): Promise<OutboxReplayAuditEntry[]>;
-  listOrganizationsWithEvents(): Promise<string[]>;
+  listOrganizationsForMaintenance(): Promise<string[]>;
   listMaintenanceAudit(
-    organizationId: string,
-    limit: number,
+    input: ListOutboxAuditInput,
   ): Promise<OutboxMaintenanceAuditEntry[]>;
   replayFailedEvents(
     input: ReplayFailedEventsInput,
@@ -116,4 +150,7 @@ export interface IOutboxRepository {
   cleanupEvents(
     input: CleanupOutboxEventsInput,
   ): Promise<CleanupOutboxEventsResult>;
+  cleanupAudits(
+    input: CleanupOutboxAuditsInput,
+  ): Promise<CleanupOutboxAuditsResult>;
 }

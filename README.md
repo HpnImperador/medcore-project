@@ -133,6 +133,8 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
 - `GET /outbox/replay-audit`
 - `GET /outbox/maintenance-audit`
 - `POST /outbox/cleanup` (limpeza controlada com `dry_run=true` por padrão)
+- `GET /outbox/audit/export` (JSON/CSV com filtro temporal)
+- `POST /outbox/audit/cleanup` (retenção de auditorias com `dry_run`)
 - Limite de sessões ativas por usuário/organização com revogação automática das mais antigas.
 - Proteção de brute force no login com bloqueio progressivo por tentativas inválidas (email + IP).
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
@@ -198,6 +200,8 @@ Exemplo:
 - `OUTBOX_ALERT_PENDING_THRESHOLD`
 - `OUTBOX_ALERT_FAILED_THRESHOLD`
 - `OUTBOX_ALERT_OLDEST_PENDING_SECONDS`
+- `OUTBOX_ADMIN_RATE_LIMIT_WINDOW_SECONDS`
+- `OUTBOX_ADMIN_RATE_LIMIT_MAX_REQUESTS`
 - `OUTBOX_AUTO_CLEANUP_ENABLED` (default `false`)
 - `OUTBOX_AUTO_CLEANUP_ALLOW_NON_PROD` (default `false`)
 - `OUTBOX_AUTO_CLEANUP_RUN_ON_START` (default `false`)
@@ -205,6 +209,8 @@ Exemplo:
 - `OUTBOX_AUTO_CLEANUP_RETENTION_DAYS` (default `30`)
 - `OUTBOX_AUTO_CLEANUP_INCLUDE_FAILED` (default `false`)
 - `OUTBOX_AUTO_CLEANUP_DRY_RUN` (default `true`)
+- `OUTBOX_AUTO_AUDIT_CLEANUP_ENABLED` (default `true`)
+- `OUTBOX_AUDIT_RETENTION_DAYS` (default `90`)
 - `OUTBOX_MAINTENANCE_SYSTEM_USER_ID` (UUID técnico para trilha de auditoria)
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
@@ -247,6 +253,8 @@ Cobertura atual da bateria:
 - `GET /outbox/replay-audit` (ADMIN)
 - `GET /outbox/maintenance-audit` (ADMIN)
 - `POST /outbox/cleanup` (ADMIN)
+- `GET /outbox/audit/export` (ADMIN)
+- `POST /outbox/audit/cleanup` (ADMIN)
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
 - bloqueio de conflito de horário por médico em agendamento (`400`, janela configurável)

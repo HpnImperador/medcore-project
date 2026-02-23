@@ -92,7 +92,7 @@ export class OutboxMaintenanceService implements OnModuleInit, OnModuleDestroy {
       const requestedByUserId = this.getMaintenanceUserId();
 
       const organizations =
-        await this.outboxRepository.listOrganizationsWithEvents();
+        await this.outboxRepository.listOrganizationsForMaintenance();
       if (organizations.length === 0) {
         this.logger.log(
           'Sem organizações com eventos no Outbox para limpeza automática.',
@@ -101,6 +101,15 @@ export class OutboxMaintenanceService implements OnModuleInit, OnModuleDestroy {
       }
 
       let totalAffected = 0;
+      let totalAuditAffected = 0;
+      const auditRetentionDays = this.getPositiveIntEnv(
+        'OUTBOX_AUDIT_RETENTION_DAYS',
+        90,
+      );
+      const autoAuditCleanup = this.getBooleanEnv(
+        'OUTBOX_AUTO_AUDIT_CLEANUP_ENABLED',
+        true,
+      );
 
       for (const organizationId of organizations) {
         const result = await this.outboxRepository.cleanupEvents({
@@ -112,10 +121,21 @@ export class OutboxMaintenanceService implements OnModuleInit, OnModuleDestroy {
         });
 
         totalAffected += result.deleted_count;
+
+        if (autoAuditCleanup) {
+          const auditResult = await this.outboxRepository.cleanupAudits({
+            organization_id: organizationId,
+            requested_by_user_id: requestedByUserId,
+            retention_days: auditRetentionDays,
+            dry_run: dryRun,
+            correlation_id: 'auto-audit-retention',
+          });
+          totalAuditAffected += auditResult.total_deleted_count;
+        }
       }
 
       this.logger.log(
-        `Limpeza automática do Outbox concluída. orgs=${organizations.length}, afetados=${totalAffected}, dry_run=${dryRun}, retention_days=${retentionDays}, include_failed=${includeFailed}.`,
+        `Limpeza automática do Outbox concluída. orgs=${organizations.length}, eventos_afetados=${totalAffected}, auditorias_afetadas=${totalAuditAffected}, dry_run=${dryRun}, retention_days=${retentionDays}, include_failed=${includeFailed}, audit_retention_days=${auditRetentionDays}, auto_audit_cleanup=${autoAuditCleanup}.`,
       );
     } catch (error) {
       this.logger.warn(
