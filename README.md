@@ -20,6 +20,11 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 ## 🧭 Padrão de Entregas
 - Processo operacional documentado em `docs/OPERACAO_ENTREGAS.md`.
 - Script de publicação de entrega grande: `scripts/push_grande_entrega.sh`.
+- O script agora valida `ssh-agent` e aplica retry automático para falhas DNS transitórias no `git push`.
+- Pré-requisito (uma vez por sessão do servidor): carregar a chave SSH no agente:
+```bash
+ssh-add ~/.ssh/id_ed25519
+```
 
 ## 🚀 Atualizações Recentes
 

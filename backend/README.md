@@ -5,6 +5,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 ## 📒 Histórico de Mudanças
 - Histórico consolidado do projeto: `../CHANGELOG.md`
 - CI backend: `../.github/workflows/backend-ci.yml`
+- Publicação automática de entrega grande: `../scripts/push_grande_entrega.sh` (com retry DNS e validação de `ssh-agent`).
 
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.
