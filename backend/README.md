@@ -48,6 +48,9 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Limite de sessões ativas com revogação automática dos refresh tokens mais antigos.
 - Política de higiene aplicada em autenticação: purge de tokens expirados/revogados.
 - Login protegido contra brute force com bloqueio progressivo por tentativas inválidas (email + IP).
+- Endpoint administrativo para inspeção e limpeza de lock de login:
+  - `GET /auth/login-lock` (ADMIN)
+  - `POST /auth/login-lock/clear` (ADMIN)
 
 ## ⚙️ Execução Local
 ```bash

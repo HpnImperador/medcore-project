@@ -81,6 +81,8 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Endpoint `POST /auth/refresh` implementado com rotação segura de refresh token.
 - Endpoint `POST /auth/logout` implementado para revogação de refresh token.
 - Endpoint `POST /auth/logout-all` implementado para revogar todas as sessões do usuário.
+- Endpoint `GET /auth/login-lock` para inspeção de bloqueio de login (ADMIN).
+- Endpoint `POST /auth/login-lock/clear` para desbloqueio manual de login (ADMIN).
 - Limite de sessões ativas por usuário/organização com revogação automática das mais antigas.
 - Proteção de brute force no login com bloqueio progressivo por tentativas inválidas (email + IP).
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.

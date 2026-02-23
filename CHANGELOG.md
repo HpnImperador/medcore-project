@@ -58,6 +58,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `AUTH_ATTEMPT_WINDOW_MINUTES`
   - `AUTH_LOCK_MINUTES`
 - Bateria API ampliada para validar brute force no login (`401` até limite configurado + `429` no bloqueio).
+- Endpoints administrativos de suporte operacional para lock de login (somente ADMIN):
+  - `GET /auth/login-lock`
+  - `POST /auth/login-lock/clear`
 
 ## [2026-02-22]
 

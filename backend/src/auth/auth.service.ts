@@ -39,7 +39,7 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto, clientIp: string) {
-    const loginKey = this.buildLoginAttemptKey(dto.email, clientIp);
+    const loginKey = this.loginAttemptService.buildKey(dto.email, clientIp);
     const lockStatus = this.loginAttemptService.checkLock(loginKey);
     if (lockStatus.locked) {
       throw new HttpException(
@@ -345,11 +345,5 @@ export class AuthService {
     }
 
     return numericValue * 1000;
-  }
-
-  private buildLoginAttemptKey(email: string, clientIp: string): string {
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedIp = clientIp.trim().toLowerCase() || 'ip-indisponivel';
-    return `${normalizedEmail}|${normalizedIp}`;
   }
 }

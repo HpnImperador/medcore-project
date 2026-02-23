@@ -8,6 +8,15 @@ interface AttemptState {
   updated_at_ms: number;
 }
 
+export interface LoginLockStatus {
+  email: string;
+  ip: string;
+  locked: boolean;
+  retry_after_seconds: number;
+  failed_count: number;
+  locked_until: string | null;
+}
+
 @Injectable()
 export class LoginAttemptService {
   private readonly attempts = new Map<string, AttemptState>();
@@ -85,6 +94,34 @@ export class LoginAttemptService {
 
   clear(key: string): void {
     this.attempts.delete(key);
+  }
+
+  buildKey(email: string, clientIp: string): string {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedIp = clientIp.trim().toLowerCase() || 'ip-indisponivel';
+    return `${normalizedEmail}|${normalizedIp}`;
+  }
+
+  getStatusByIdentity(email: string, clientIp: string): LoginLockStatus {
+    const key = this.buildKey(email, clientIp);
+    const lock = this.checkLock(key);
+    const state = this.attempts.get(key);
+
+    return {
+      email: email.trim().toLowerCase(),
+      ip: clientIp.trim().toLowerCase() || 'ip-indisponivel',
+      locked: lock.locked,
+      retry_after_seconds: lock.retry_after_seconds,
+      failed_count: state?.failed_count ?? 0,
+      locked_until: state?.locked_until_ms
+        ? new Date(state.locked_until_ms).toISOString()
+        : null,
+    };
+  }
+
+  clearByIdentity(email: string, clientIp: string): void {
+    const key = this.buildKey(email, clientIp);
+    this.clear(key);
   }
 
   private getMaxFailedAttempts(): number {

@@ -8,6 +8,7 @@ import { PrismaUsersRepository } from '../infra/repositories/prisma-users.reposi
 import { PrismaRefreshTokensRepository } from '../infra/repositories/prisma-refresh-tokens.repository';
 import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
 import { LoginAttemptService } from './login-attempt.service';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { LoginAttemptService } from './login-attempt.service';
     PrismaService,
     AuthService,
     LoginAttemptService,
+    RolesGuard,
     {
       provide: REPOSITORY_TOKENS.USERS,
       useClass: PrismaUsersRepository,
