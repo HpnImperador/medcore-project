@@ -14,6 +14,8 @@ import { REPOSITORY_TOKENS } from '../domain/repositories/repository-tokens';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
+import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { N8nWebhookService } from '../integrations/n8n/n8n-webhook.service';
 
 @Injectable()
@@ -123,6 +125,87 @@ export class AppointmentsService {
     return appointment;
   }
 
+  async cancel(
+    appointmentId: string,
+    dto: CancelAppointmentDto,
+    currentUser: AuthenticatedUser,
+  ): Promise<AppointmentEntity> {
+    const existing = await this.findAccessibleAppointment(
+      appointmentId,
+      currentUser,
+    );
+
+    this.ensureCanMutateAppointment(existing.status, 'cancelar');
+
+    const currentNotes = existing.notes?.trim() ?? '';
+    const cancelAudit = `[CANCELADO] ${dto.reason.trim()}`;
+    const mergedNotes = currentNotes
+      ? `${currentNotes}\n${cancelAudit}`
+      : cancelAudit;
+
+    const updated =
+      await this.appointmentsRepository.updateByIdInOrganizationAndBranches(
+        appointmentId,
+        currentUser.organizationId,
+        currentUser.branchIds,
+        {
+          status: 'CANCELED',
+          notes: mergedNotes,
+        },
+      );
+
+    if (!updated) {
+      throw new NotFoundException(
+        'Agendamento não encontrado para a organização/filiais permitidas.',
+      );
+    }
+
+    return updated;
+  }
+
+  async reschedule(
+    appointmentId: string,
+    dto: RescheduleAppointmentDto,
+    currentUser: AuthenticatedUser,
+  ): Promise<AppointmentEntity> {
+    this.ensureFutureDate(dto.scheduled_at);
+    const existing = await this.findAccessibleAppointment(
+      appointmentId,
+      currentUser,
+    );
+
+    this.ensureCanMutateAppointment(existing.status, 'reagendar');
+
+    const reason = dto.reason?.trim();
+    const currentNotes = existing.notes?.trim() ?? '';
+    const rescheduleAudit = reason
+      ? `[REAGENDADO] ${reason}`
+      : '[REAGENDADO] Alteração de data/hora sem motivo informado.';
+    const mergedNotes = currentNotes
+      ? `${currentNotes}\n${rescheduleAudit}`
+      : rescheduleAudit;
+
+    const updated =
+      await this.appointmentsRepository.updateByIdInOrganizationAndBranches(
+        appointmentId,
+        currentUser.organizationId,
+        currentUser.branchIds,
+        {
+          status: 'SCHEDULED',
+          scheduled_at: dto.scheduled_at,
+          notes: mergedNotes,
+        },
+      );
+
+    if (!updated) {
+      throw new NotFoundException(
+        'Agendamento não encontrado para a organização/filiais permitidas.',
+      );
+    }
+
+    return updated;
+  }
+
   async findAll(
     query: ListAppointmentsQueryDto,
     currentUser: AuthenticatedUser,
@@ -156,6 +239,45 @@ export class AppointmentsService {
   private ensureFutureDate(scheduledAt: Date): void {
     if (scheduledAt.getTime() <= Date.now()) {
       throw new BadRequestException('A data do agendamento deve ser futura.');
+    }
+  }
+
+  private async findAccessibleAppointment(
+    appointmentId: string,
+    currentUser: AuthenticatedUser,
+  ): Promise<AppointmentEntity> {
+    const appointment =
+      await this.appointmentsRepository.findByIdInOrganizationAndBranches(
+        appointmentId,
+        currentUser.organizationId,
+        currentUser.branchIds,
+      );
+
+    if (!appointment) {
+      throw new NotFoundException(
+        'Agendamento não encontrado para a organização/filiais permitidas.',
+      );
+    }
+
+    return appointment;
+  }
+
+  private ensureCanMutateAppointment(
+    status: string,
+    actionLabel: 'cancelar' | 'reagendar',
+  ): void {
+    const normalizedStatus = status.toUpperCase();
+
+    if (normalizedStatus === 'COMPLETED') {
+      throw new BadRequestException(
+        `Não é possível ${actionLabel} um agendamento concluído.`,
+      );
+    }
+
+    if (normalizedStatus === 'CANCELED') {
+      throw new BadRequestException(
+        `Não é possível ${actionLabel} um agendamento já cancelado.`,
+      );
     }
   }
 }

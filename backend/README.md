@@ -7,6 +7,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 
 ## 🚀 Atualizações Recentes
 - Implementação de módulo de agendamentos multi-tenant.
+- Implementação de cancelamento e reagendamento de agendamentos.
 - Implementação de autenticação com `POST /auth/login`.
 - Implementação de rotação de sessão com `POST /auth/refresh`.
 - Implementação de revogação de sessão com `POST /auth/logout`.
@@ -110,6 +111,8 @@ npm test -- --runInBand
   - `POST /appointments`
   - `GET /appointments`
   - `PATCH /appointments/:id/complete`
+  - `PATCH /appointments/:id/reschedule`
+  - `PATCH /appointments/:id/cancel`
 
 Execução:
 ```bash

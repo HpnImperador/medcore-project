@@ -34,8 +34,25 @@ export interface FindAppointmentsFilters {
   status?: string;
 }
 
+export interface UpdateAppointmentRepositoryInput {
+  status?: string;
+  scheduled_at?: Date;
+  notes?: string | null;
+}
+
 export interface IAppointmentsRepository {
   create(input: CreateAppointmentRepositoryInput): Promise<AppointmentEntity>;
+  findByIdInOrganizationAndBranches(
+    appointmentId: string,
+    organizationId: string,
+    branchIds: string[],
+  ): Promise<AppointmentEntity | null>;
+  updateByIdInOrganizationAndBranches(
+    appointmentId: string,
+    organizationId: string,
+    branchIds: string[],
+    input: UpdateAppointmentRepositoryInput,
+  ): Promise<AppointmentEntity | null>;
   completeByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,

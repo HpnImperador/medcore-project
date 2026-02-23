@@ -192,4 +192,68 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Conclusão de agendamento validada."
 
-echo "Bateria finalizada com sucesso (auth + users + sessao + appointments)."
+SCHEDULED_AT_2=$(date -u -d '+4 hours' +"%Y-%m-%dT%H:%M:%S.000Z")
+CREATE_APPT_PAYLOAD_2=$(cat <<JSON
+{
+  "branch_id": "$TEST_BRANCH_ID",
+  "patient_id": "$TEST_PATIENT_ID",
+  "doctor_id": "$TEST_DOCTOR_ID",
+  "scheduled_at": "$SCHEDULED_AT_2",
+  "notes": "Bateria automatizada - cancel/reagendamento"
+}
+JSON
+)
+
+CODE=$(http_code POST "$BASE_URL/appointments" \
+  -H "Authorization: Bearer $NEW_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$CREATE_APPT_PAYLOAD_2")
+if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "POST /appointments (2) falhou (HTTP $CODE)."
+fi
+
+APPOINTMENT_ID_2=$(extract_json_field "id")
+if [[ -z "$APPOINTMENT_ID_2" || "$APPOINTMENT_ID_2" == "undefined" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "Criação do segundo agendamento sem id no retorno."
+fi
+ok "Segundo agendamento criado para validar reagendamento/cancelamento (id=$APPOINTMENT_ID_2)."
+
+RESCHEDULED_AT=$(date -u -d '+6 hours' +"%Y-%m-%dT%H:%M:%S.000Z")
+RESCHEDULE_PAYLOAD=$(cat <<JSON
+{
+  "scheduled_at": "$RESCHEDULED_AT",
+  "reason": "Conflito de agenda médica"
+}
+JSON
+)
+
+CODE=$(http_code PATCH "$BASE_URL/appointments/$APPOINTMENT_ID_2/reschedule" \
+  -H "Authorization: Bearer $NEW_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$RESCHEDULE_PAYLOAD")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "PATCH /appointments/:id/reschedule falhou (HTTP $CODE)."
+fi
+ok "Reagendamento validado."
+
+CANCEL_PAYLOAD=$(cat <<JSON
+{
+  "reason": "Paciente indisposto no dia da consulta"
+}
+JSON
+)
+
+CODE=$(http_code PATCH "$BASE_URL/appointments/$APPOINTMENT_ID_2/cancel" \
+  -H "Authorization: Bearer $NEW_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$CANCEL_PAYLOAD")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "PATCH /appointments/:id/cancel falhou (HTTP $CODE)."
+fi
+ok "Cancelamento validado."
+
+echo "Bateria finalizada com sucesso (auth + users + sessao + appointments + cancelamento/reagendamento)."

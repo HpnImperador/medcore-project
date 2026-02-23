@@ -26,11 +26,15 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
   - `POST /appointments`
   - `GET /appointments`
   - `PATCH /appointments/:id/complete`
+  - `PATCH /appointments/:id/cancel`
+  - `PATCH /appointments/:id/reschedule`
 - Regras aplicadas:
   - Médico e paciente devem pertencer à mesma organização do usuário autenticado.
   - Usuário só acessa filiais permitidas em `branch_ids`/`branchIds` do JWT.
   - Médico precisa estar vinculado à filial em `user_branches`.
   - Data de agendamento precisa ser futura (`@IsFutureDate`).
+  - Cancelamento/Reagendamento bloqueados para agendamentos já concluídos/cancelados.
+  - Motivo operacional registrado em `notes` para trilha de auditoria da consulta.
 
 ### Webhook n8n
 - Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
@@ -130,6 +134,8 @@ Cobertura atual da bateria:
 - `POST /appointments`
 - `GET /appointments`
 - `PATCH /appointments/:id/complete`
+- `PATCH /appointments/:id/reschedule`
+- `PATCH /appointments/:id/cancel`
 
 ## 🛠️ Setup e Execução
 ```bash

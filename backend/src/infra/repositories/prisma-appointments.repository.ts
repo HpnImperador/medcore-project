@@ -6,6 +6,7 @@ import {
   DoctorEntity,
   FindAppointmentsFilters,
   IAppointmentsRepository,
+  UpdateAppointmentRepositoryInput,
 } from '../../domain/repositories/appointments.repository.interface';
 
 interface AppointmentsDelegate {
@@ -28,10 +29,21 @@ interface AppointmentsDelegate {
     };
     data: { status: string };
   }): Promise<{ count: number }>;
+  update(args: {
+    where: {
+      id: string;
+    };
+    data: {
+      status?: string;
+      scheduled_at?: Date;
+      notes?: string | null;
+    };
+  }): Promise<AppointmentEntity>;
   findFirst(args: {
     where: {
       id: string;
       organization_id: string;
+      branch_id?: { in: string[] };
     };
   }): Promise<AppointmentEntity | null>;
   findMany(args: {
@@ -98,6 +110,52 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
       where: {
         id: appointmentId,
         organization_id: organizationId,
+      },
+    });
+  }
+
+  findByIdInOrganizationAndBranches(
+    appointmentId: string,
+    organizationId: string,
+    branchIds: string[],
+  ): Promise<AppointmentEntity | null> {
+    if (branchIds.length === 0) {
+      return Promise.resolve(null);
+    }
+
+    return this.appointmentsDelegate.findFirst({
+      where: {
+        id: appointmentId,
+        organization_id: organizationId,
+        branch_id: { in: branchIds },
+      },
+    });
+  }
+
+  async updateByIdInOrganizationAndBranches(
+    appointmentId: string,
+    organizationId: string,
+    branchIds: string[],
+    input: UpdateAppointmentRepositoryInput,
+  ): Promise<AppointmentEntity | null> {
+    const existing = await this.findByIdInOrganizationAndBranches(
+      appointmentId,
+      organizationId,
+      branchIds,
+    );
+
+    if (!existing) {
+      return null;
+    }
+
+    return this.appointmentsDelegate.update({
+      where: {
+        id: appointmentId,
+      },
+      data: {
+        ...(input.status ? { status: input.status } : {}),
+        ...(input.scheduled_at ? { scheduled_at: input.scheduled_at } : {}),
+        ...(input.notes !== undefined ? { notes: input.notes } : {}),
       },
     });
   }

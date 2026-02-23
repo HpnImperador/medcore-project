@@ -36,6 +36,11 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Script `scripts/bateria_api_backend.sh` atualizado para suportar envelope `{ data, meta }` e cobrir fluxo de sessão (`refresh`, `logout`, `logout-all`).
 - Seed idempotente adicionado em `backend/prisma/seed.js` com script `npm run prisma:seed` para criar/atualizar organização, filial, médico, vínculo em `user_branches` e paciente de teste.
 - Seed agora gera `backend/.seed.env`; `scripts/bateria_api_backend.sh` passa a consumir esse arquivo automaticamente como fallback para `TEST_*`.
+- Endpoints de gestão operacional de consulta:
+  - `PATCH /appointments/:id/reschedule`
+  - `PATCH /appointments/:id/cancel`
+- Regras de negócio para impedir cancelamento/reagendamento de consulta já concluída/cancelada, com registro de motivo em `notes`.
+- Bateria API ampliada para validar `reschedule` e `cancel` em fluxo real.
 
 ## [2026-02-22]
 

@@ -167,6 +167,53 @@ describe('MedCore API (e2e)', () => {
         return Promise.resolve(found);
       },
     ),
+    findByIdInOrganizationAndBranches: jest.fn(
+      (appointmentId: string, orgId: string, branches: string[]) => {
+        const found = appointmentsStore.find(
+          (item) =>
+            item.id === appointmentId &&
+            item.organization_id === orgId &&
+            branches.includes(item.branch_id),
+        );
+
+        return Promise.resolve(found ?? null);
+      },
+    ),
+    updateByIdInOrganizationAndBranches: jest.fn(
+      (
+        appointmentId: string,
+        orgId: string,
+        branches: string[],
+        input: {
+          status?: string;
+          scheduled_at?: Date;
+          notes?: string | null;
+        },
+      ) => {
+        const found = appointmentsStore.find(
+          (item) =>
+            item.id === appointmentId &&
+            item.organization_id === orgId &&
+            branches.includes(item.branch_id),
+        );
+
+        if (!found) {
+          return Promise.resolve(null);
+        }
+
+        if (input.status) {
+          found.status = input.status;
+        }
+        if (input.scheduled_at) {
+          found.scheduled_at = input.scheduled_at;
+        }
+        if (input.notes !== undefined) {
+          found.notes = input.notes;
+        }
+        found.updated_at = new Date();
+        return Promise.resolve(found);
+      },
+    ),
     findDoctorByIdAndOrganization: jest.fn((id: string, orgId: string) => {
       if (id === doctorId && orgId === organizationId) {
         return Promise.resolve({
@@ -516,5 +563,58 @@ describe('MedCore API (e2e)', () => {
     const completed = dataOf<AppointmentData>(completeResponse);
     expect(completed.status).toBe('COMPLETED');
     expect(mockN8n.notifyAppointmentCompleted).toHaveBeenCalled();
+  });
+
+  it('deve reagendar e cancelar um agendamento', async () => {
+    const loginResponse = await request(baseUrl)
+      .post('/auth/login')
+      .send({
+        email: 'medico@medcore.com',
+        password: '123456',
+      })
+      .expect(201);
+
+    const token = dataOf<LoginData>(loginResponse).access_token;
+    const scheduledAt = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+
+    const createResponse = await request(baseUrl)
+      .post('/appointments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        branch_id: branchId,
+        patient_id: patientId,
+        doctor_id: doctorId,
+        scheduled_at: scheduledAt,
+        notes: 'E2E reagendamento/cancelamento',
+      })
+      .expect(201);
+
+    const created = dataOf<AppointmentData>(createResponse);
+
+    const rescheduledAt = new Date(
+      Date.now() + 6 * 60 * 60 * 1000,
+    ).toISOString();
+    const rescheduleResponse = await request(baseUrl)
+      .patch(`/appointments/${created.id}/reschedule`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        scheduled_at: rescheduledAt,
+        reason: 'Conflito de agenda médica',
+      })
+      .expect(200);
+
+    const rescheduled = dataOf<AppointmentData>(rescheduleResponse);
+    expect(rescheduled.status).toBe('SCHEDULED');
+
+    const cancelResponse = await request(baseUrl)
+      .patch(`/appointments/${created.id}/cancel`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        reason: 'Paciente indisposto',
+      })
+      .expect(200);
+
+    const canceled = dataOf<AppointmentData>(cancelResponse);
+    expect(canceled.status).toBe('CANCELED');
   });
 });

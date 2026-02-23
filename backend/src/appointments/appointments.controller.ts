@@ -20,6 +20,8 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
+import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
@@ -67,5 +69,48 @@ export class AppointmentsController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.appointmentsService.complete(appointmentId, currentUser);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({
+    summary: 'Cancela um agendamento com motivo e trilha de auditoria em notes',
+  })
+  @ApiParam({ name: 'id', example: 'e31ed3d4-280c-4d5e-aa00-5a686ec8bc9e' })
+  @ApiOkResponse({ description: 'Agendamento cancelado com sucesso.' })
+  @ApiNotFoundResponse({
+    description: 'Agendamento não encontrado no tenant/filiais.',
+  })
+  async cancel(
+    @Param('id') appointmentId: string,
+    @Body() cancelAppointmentDto: CancelAppointmentDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.appointmentsService.cancel(
+      appointmentId,
+      cancelAppointmentDto,
+      currentUser,
+    );
+  }
+
+  @Patch(':id/reschedule')
+  @ApiOperation({
+    summary:
+      'Reagenda um agendamento para nova data futura com motivo opcional',
+  })
+  @ApiParam({ name: 'id', example: 'e31ed3d4-280c-4d5e-aa00-5a686ec8bc9e' })
+  @ApiOkResponse({ description: 'Agendamento reagendado com sucesso.' })
+  @ApiNotFoundResponse({
+    description: 'Agendamento não encontrado no tenant/filiais.',
+  })
+  async reschedule(
+    @Param('id') appointmentId: string,
+    @Body() rescheduleAppointmentDto: RescheduleAppointmentDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.appointmentsService.reschedule(
+      appointmentId,
+      rescheduleAppointmentDto,
+      currentUser,
+    );
   }
 }
