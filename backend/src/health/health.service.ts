@@ -118,7 +118,7 @@ export class HealthService {
 
   private computeOverallStatus(
     databaseStatus: 'up' | 'down',
-    n8nStatus: 'up' | 'down' | 'not_configured',
+    n8nStatus: 'up' | 'down' | 'degraded' | 'not_configured',
     outboxStatus: 'up' | 'degraded' | 'error',
   ): HealthStatus {
     if (databaseStatus === 'down' || outboxStatus === 'error') {
@@ -127,6 +127,7 @@ export class HealthService {
 
     if (
       n8nStatus === 'down' ||
+      n8nStatus === 'degraded' ||
       n8nStatus === 'not_configured' ||
       outboxStatus === 'degraded'
     ) {

@@ -124,6 +124,7 @@ docker compose restart n8n
   - `GET /health/alerts`
 - `/health` retorna status consolidado (`ok`, `degraded`, `error`).
 - Quando `N8N_APPOINTMENTS_WEBHOOK_URL` não estiver definida, o status fica `degraded` sem derrubar a API.
+- Quando a URL do n8n responde `404` no probe HTTP `GET`, o status de `health/n8n` fica `degraded` com `reason=webhook_may_accept_post_only`.
 - `GET /health/alert-check` dispara alerta operacional via webhook quando status estiver `degraded`/`error`.
 - `GET /health/alerts` agora retorna histórico persistido em banco (`health_alert_events`).
 

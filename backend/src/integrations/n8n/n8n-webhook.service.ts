@@ -9,11 +9,12 @@ export class N8nWebhookService {
   constructor(private readonly configService: ConfigService) {}
 
   async healthCheck(): Promise<{
-    status: 'up' | 'down' | 'not_configured';
+    status: 'up' | 'down' | 'degraded' | 'not_configured';
     configured: boolean;
     url: string | null;
     latency_ms?: number;
     http_status?: number;
+    reason?: string;
     error?: string;
   }> {
     const url =
@@ -34,12 +35,27 @@ export class N8nWebhookService {
         validateStatus: () => true,
       });
 
+      const status =
+        response.status >= 200 && response.status < 300
+          ? 'up'
+          : response.status === 404
+            ? 'degraded'
+            : 'down';
+
+      const reason =
+        response.status === 404
+          ? 'webhook_may_accept_post_only'
+          : response.status >= 200 && response.status < 300
+            ? 'http_success'
+            : 'unexpected_http_status';
+
       return {
-        status: 'up',
+        status,
         configured: true,
         url,
         latency_ms: Date.now() - startedAt,
         http_status: response.status,
+        reason,
       };
     } catch (error) {
       return {

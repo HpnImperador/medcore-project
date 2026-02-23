@@ -181,6 +181,7 @@ docker compose restart n8n
 - `GET /health`: status consolidado da API (DB + n8n).
 - `GET /health/db`: teste de conectividade com PostgreSQL.
 - `GET /health/n8n`: teste de conectividade do webhook n8n.
+- Quando o probe `GET` no webhook retorna `404`, o health do n8n é classificado como `degraded` (caso típico de webhook apenas `POST`).
 - `GET /health/metrics`: uptime e uso de memória do processo.
 - `GET /health/outbox`: métricas do pipeline Outbox (`pending`, `failed`, `latência`).
 - `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
