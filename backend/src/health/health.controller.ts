@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { HealthService } from './health.service';
 
@@ -59,5 +59,17 @@ export class HealthController {
   })
   async alertCheck() {
     return this.healthService.checkAndNotify();
+  }
+
+  @Get('alerts')
+  @ApiOperation({
+    summary: 'Lista histórico recente de alertas operacionais disparados',
+  })
+  @ApiOkResponse({
+    description: 'Histórico de alertas retornado com sucesso.',
+  })
+  alerts(@Query('limit') limit?: string) {
+    const parsed = limit ? Number.parseInt(limit, 10) : undefined;
+    return this.healthService.getRecentAlerts(parsed);
   }
 }

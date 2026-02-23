@@ -8,10 +8,20 @@ interface HealthSummaryLike {
   timestamp: string;
 }
 
+export interface HealthAlertEntry {
+  event: 'health_alert_sent' | 'health_alert_failed';
+  status: 'degraded' | 'error';
+  timestamp: string;
+  webhook_url: string;
+  reason: 'alert_sent' | 'alert_failed';
+  error?: string;
+}
+
 @Injectable()
 export class HealthAlertService {
   private readonly logger = new Logger(HealthAlertService.name);
   private lastAlertAtMs = 0;
+  private readonly alertHistory: HealthAlertEntry[] = [];
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -66,6 +76,14 @@ export class HealthAlertService {
         }),
       );
 
+      this.pushAlertHistory({
+        event: 'health_alert_sent',
+        status: summary.status,
+        webhook_url: webhookUrl,
+        reason: 'alert_sent',
+        timestamp: new Date(now).toISOString(),
+      });
+
       return {
         triggered: true,
         reason: 'alert_sent',
@@ -81,11 +99,25 @@ export class HealthAlertService {
         }),
       );
 
+      this.pushAlertHistory({
+        event: 'health_alert_failed',
+        status: summary.status,
+        webhook_url: webhookUrl,
+        reason: 'alert_failed',
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        timestamp: new Date(now).toISOString(),
+      });
+
       return {
         triggered: false,
         reason: 'alert_failed',
       };
     }
+  }
+
+  listRecentAlerts(limit = 20) {
+    const normalizedLimit = Number.isNaN(limit) || limit <= 0 ? 20 : limit;
+    return this.alertHistory.slice(0, Math.min(normalizedLimit, 100));
   }
 
   private getCooldownMinutes(): number {
@@ -99,5 +131,12 @@ export class HealthAlertService {
     }
 
     return parsed;
+  }
+
+  private pushAlertHistory(entry: HealthAlertEntry): void {
+    this.alertHistory.unshift(entry);
+    if (this.alertHistory.length > 100) {
+      this.alertHistory.pop();
+    }
   }
 }

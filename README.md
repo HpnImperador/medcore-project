@@ -63,6 +63,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
   - `GET /health/n8n`
   - `GET /health/metrics`
   - `GET /health/alert-check`
+  - `GET /health/alerts`
 - `/health` retorna status consolidado (`ok`, `degraded`, `error`).
 - Quando `N8N_APPOINTMENTS_WEBHOOK_URL` não estiver definida, o status fica `degraded` sem derrubar a API.
 - `GET /health/alert-check` dispara alerta operacional via webhook quando status estiver `degraded`/`error`.
@@ -160,6 +161,7 @@ Cobertura atual da bateria:
 - `GET /health/db`
 - `GET /health/metrics`
 - `GET /health/alert-check`
+- `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
 - `POST /auth/login`
 - `GET /users/me`

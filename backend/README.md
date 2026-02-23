@@ -108,6 +108,7 @@ WHERE email = 'medico@medcore.com';
 - `GET /health/n8n`: teste de conectividade do webhook n8n.
 - `GET /health/metrics`: uptime e uso de memória do processo.
 - `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
+- `GET /health/alerts`: histórico recente de alertas operacionais disparados.
 - Logs HTTP emitidos em JSON estruturado (`event=http_request_completed`).
 
 ## 🧪 Checks de Qualidade

@@ -63,6 +63,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `POST /auth/login-lock/clear`
 - Seed idempotente atualizado com usuário `ADMIN` padrão (`admin@medcore.com`) para validações operacionais.
 - Bateria API ampliada para validar `login-lock` e `login-lock/clear` quando credenciais admin estiverem disponíveis.
+- Histórico de alertas operacionais adicionado com endpoint `GET /health/alerts`.
+- Bateria API ampliada para validar `GET /health/alerts`.
 
 ## [2026-02-22]
 

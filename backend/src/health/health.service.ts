@@ -77,6 +77,10 @@ export class HealthService {
     };
   }
 
+  getRecentAlerts(limit?: number) {
+    return this.healthAlertService.listRecentAlerts(limit);
+  }
+
   private computeOverallStatus(
     databaseStatus: 'up' | 'down',
     n8nStatus: 'up' | 'down' | 'not_configured',
