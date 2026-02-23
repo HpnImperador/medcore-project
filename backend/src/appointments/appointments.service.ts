@@ -17,6 +17,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
+import { GetAvailableSlotsQueryDto } from './dto/get-available-slots-query.dto';
 import { N8nWebhookService } from '../integrations/n8n/n8n-webhook.service';
 
 @Injectable()
@@ -250,6 +251,96 @@ export class AppointmentsService {
     );
   }
 
+  async getAvailableSlots(
+    query: GetAvailableSlotsQueryDto,
+    currentUser: AuthenticatedUser,
+  ): Promise<{ slots: string[] }> {
+    if (!currentUser.branchIds.includes(query.branch_id)) {
+      throw new ForbiddenException(
+        'Usuário não possui acesso à filial informada.',
+      );
+    }
+
+    const [doctor, isBranchFromOrg, isDoctorInBranch] = await Promise.all([
+      this.appointmentsRepository.findDoctorByIdAndOrganization(
+        query.doctor_id,
+        currentUser.organizationId,
+      ),
+      this.appointmentsRepository.isBranchFromOrganization(
+        query.branch_id,
+        currentUser.organizationId,
+      ),
+      this.appointmentsRepository.isDoctorInBranch(
+        query.doctor_id,
+        query.branch_id,
+      ),
+    ]);
+
+    if (!doctor) {
+      throw new NotFoundException(
+        'Médico não encontrado na organização do usuário autenticado.',
+      );
+    }
+
+    if (!isBranchFromOrg) {
+      throw new ForbiddenException(
+        'A filial não pertence à organização do usuário.',
+      );
+    }
+
+    if (!isDoctorInBranch) {
+      throw new BadRequestException(
+        'Médico não possui vínculo com a filial informada em user_branches.',
+      );
+    }
+
+    const durationMinutes = this.getAppointmentDurationMinutes();
+    const slotIntervalMinutes = this.getSlotIntervalMinutes(durationMinutes);
+    const dayStart = this.getDayBoundary(
+      query.date,
+      this.getWorkdayStartHour(),
+    );
+    const dayEnd = this.getDayBoundary(query.date, this.getWorkdayEndHour());
+
+    if (dayEnd.getTime() <= dayStart.getTime()) {
+      throw new BadRequestException(
+        'Configuração inválida: horário final da agenda deve ser maior que o inicial.',
+      );
+    }
+
+    const appointments =
+      await this.appointmentsRepository.findDoctorAppointmentsInRange(
+        currentUser.organizationId,
+        query.doctor_id,
+        dayStart,
+        dayEnd,
+      );
+
+    const durationMs = durationMinutes * 60 * 1000;
+    const intervalMs = slotIntervalMinutes * 60 * 1000;
+    const lastSlotStart = dayEnd.getTime() - durationMs;
+    const slots: string[] = [];
+
+    for (
+      let slotStartMs = dayStart.getTime();
+      slotStartMs <= lastSlotStart;
+      slotStartMs += intervalMs
+    ) {
+      const slotEndMs = slotStartMs + durationMs;
+      const overlaps = appointments.some((appointment) => {
+        const appointmentStartMs = appointment.scheduled_at.getTime();
+        const appointmentEndMs = appointmentStartMs + durationMs;
+        return slotStartMs < appointmentEndMs && appointmentStartMs < slotEndMs;
+      });
+
+      if (!overlaps) {
+        slots.push(new Date(slotStartMs).toISOString());
+      }
+    }
+
+    return { slots };
+  }
+
   private ensureFutureDate(scheduledAt: Date): void {
     if (scheduledAt.getTime() <= Date.now()) {
       throw new BadRequestException('A data do agendamento deve ser futura.');
@@ -327,5 +418,47 @@ export class AppointmentsService {
       return 30;
     }
     return parsed;
+  }
+
+  private getSlotIntervalMinutes(durationMinutes: number): number {
+    const configured = this.configService.get<string>(
+      'APPOINTMENT_SLOT_INTERVAL_MINUTES',
+    );
+    const parsed = Number.parseInt(configured ?? '', 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return durationMinutes;
+    }
+    return parsed;
+  }
+
+  private getWorkdayStartHour(): number {
+    return this.getHourConfig('APPOINTMENT_WORKDAY_START_HOUR', 8);
+  }
+
+  private getWorkdayEndHour(): number {
+    return this.getHourConfig('APPOINTMENT_WORKDAY_END_HOUR', 18);
+  }
+
+  private getHourConfig(envName: string, defaultValue: number): number {
+    const configured = this.configService.get<string>(envName);
+    const parsed = Number.parseInt(configured ?? '', 10);
+    if (Number.isNaN(parsed) || parsed < 0 || parsed > 23) {
+      return defaultValue;
+    }
+    return parsed;
+  }
+
+  private getDayBoundary(baseDate: Date, hourUtc: number): Date {
+    return new Date(
+      Date.UTC(
+        baseDate.getUTCFullYear(),
+        baseDate.getUTCMonth(),
+        baseDate.getUTCDate(),
+        hourUtc,
+        0,
+        0,
+        0,
+      ),
+    );
   }
 }

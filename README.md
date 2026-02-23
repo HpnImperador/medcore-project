@@ -37,6 +37,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
 - Endpoints implementados:
   - `POST /appointments`
   - `GET /appointments`
+  - `GET /appointments/slots`
   - `PATCH /appointments/:id/complete`
   - `PATCH /appointments/:id/cancel`
   - `PATCH /appointments/:id/reschedule`
@@ -135,6 +136,9 @@ Exemplo:
 - `AUTH_ATTEMPT_WINDOW_MINUTES`
 - `AUTH_LOCK_MINUTES`
 - `APPOINTMENT_DURATION_MINUTES`
+- `APPOINTMENT_SLOT_INTERVAL_MINUTES`
+- `APPOINTMENT_WORKDAY_START_HOUR`
+- `APPOINTMENT_WORKDAY_END_HOUR`
 - `N8N_APPOINTMENTS_WEBHOOK_URL`
 - `HEALTH_ALERT_WEBHOOK_URL`
 - `HEALTH_ALERT_COOLDOWN_MINUTES`
@@ -175,6 +179,7 @@ Cobertura atual da bateria:
 - `POST /auth/logout-all`
 - `POST /appointments`
 - `GET /appointments`
+- `GET /appointments/slots`
 - `PATCH /appointments/:id/complete`
 - `PATCH /appointments/:id/reschedule`
 - `PATCH /appointments/:id/cancel`

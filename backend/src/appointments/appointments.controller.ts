@@ -22,6 +22,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto';
+import { GetAvailableSlotsQueryDto } from './dto/get-available-slots-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/authenticated-user.interface';
@@ -53,6 +54,20 @@ export class AppointmentsController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.appointmentsService.findAll(query, currentUser);
+  }
+
+  @Get('slots')
+  @ApiOperation({
+    summary: 'Retorna slots disponíveis de agenda para um médico em uma filial',
+  })
+  @ApiOkResponse({
+    description: 'Lista de slots disponíveis retornada com sucesso.',
+  })
+  async availableSlots(
+    @Query() query: GetAvailableSlotsQueryDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.appointmentsService.getAvailableSlots(query, currentUser);
   }
 
   @Patch(':id/complete')

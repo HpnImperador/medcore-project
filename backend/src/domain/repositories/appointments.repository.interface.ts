@@ -49,6 +49,12 @@ export interface IAppointmentsRepository {
     durationMinutes: number,
     excludeAppointmentId?: string,
   ): Promise<boolean>;
+  findDoctorAppointmentsInRange(
+    organizationId: string,
+    doctorId: string,
+    from: Date,
+    to: Date,
+  ): Promise<AppointmentEntity[]>;
   findByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,

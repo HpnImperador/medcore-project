@@ -114,6 +114,30 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
     return Boolean(conflict);
   }
 
+  findDoctorAppointmentsInRange(
+    organizationId: string,
+    doctorId: string,
+    from: Date,
+    to: Date,
+  ): Promise<AppointmentEntity[]> {
+    return this.prisma.appointments.findMany({
+      where: {
+        organization_id: organizationId,
+        doctor_id: doctorId,
+        scheduled_at: {
+          gte: from,
+          lt: to,
+        },
+        status: {
+          not: 'CANCELED',
+        },
+      },
+      orderBy: {
+        scheduled_at: 'asc',
+      },
+    });
+  }
+
   async completeByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,

@@ -250,6 +250,19 @@ describe('MedCore API (e2e)', () => {
           ),
         ),
     ),
+    findDoctorAppointmentsInRange: jest.fn(
+      (orgId: string, docId: string, from: Date, to: Date) =>
+        Promise.resolve(
+          appointmentsStore.filter(
+            (item) =>
+              item.organization_id === orgId &&
+              item.doctor_id === docId &&
+              item.status !== 'CANCELED' &&
+              item.scheduled_at >= from &&
+              item.scheduled_at < to,
+          ),
+        ),
+    ),
     findAllByOrganizationAndBranches: jest.fn(
       (orgId: string, branches: string[]) =>
         Promise.resolve(

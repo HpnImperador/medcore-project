@@ -69,6 +69,11 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - `HealthAlertService` migrado de buffer em memória para Repository Pattern com consulta persistida.
 - Regra de negócio adicionada para bloquear conflito de agenda por médico no mesmo horário em criação/reagendamento.
 - Regra evoluída para janela de sobreposição configurável via `APPOINTMENT_DURATION_MINUTES` (default 30 minutos).
+- Endpoint `GET /appointments/slots` adicionado para consulta de disponibilidade por médico/filial/data.
+- Configurações de agenda operacional adicionadas:
+  - `APPOINTMENT_SLOT_INTERVAL_MINUTES`
+  - `APPOINTMENT_WORKDAY_START_HOUR`
+  - `APPOINTMENT_WORKDAY_END_HOUR`
 - Bateria API ampliada para validar conflito de horário com retorno `400`.
 
 ## [2026-02-22]

@@ -354,6 +354,15 @@ if [[ "$CODE" != "200" ]]; then
 fi
 ok "Listagem de agendamentos validada."
 
+SLOTS_DATE=$(date -u -d '+1 day' +"%Y-%m-%dT00:00:00.000Z")
+CODE=$(http_code GET "$BASE_URL/appointments/slots?branch_id=$TEST_BRANCH_ID&doctor_id=$TEST_DOCTOR_ID&date=$SLOTS_DATE" \
+  -H "Authorization: Bearer $NEW_TOKEN")
+if [[ "$CODE" != "200" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "GET /appointments/slots falhou (HTTP $CODE)."
+fi
+ok "Consulta de slots disponíveis validada."
+
 CODE=$(http_code PATCH "$BASE_URL/appointments/$APPOINTMENT_ID/complete" \
   -H "Authorization: Bearer $NEW_TOKEN")
 if [[ "$CODE" != "200" ]]; then
