@@ -203,6 +203,10 @@ Script de smoke para validar integração HTTP ponta a ponta:
   - `GET /auth/login-lock`
   - `POST /auth/login-lock/clear`
 
+Teste operacional focado no cleanup do Outbox:
+- Arquivo: `../scripts/testar_outbox_cleanup.sh`
+- Fluxo: login admin -> `GET /outbox/maintenance-audit` -> `POST /outbox/cleanup` -> `GET /outbox/maintenance-audit`.
+
 Validação local fim a fim (comando único):
 - Arquivo: `../scripts/validar_backend_local.sh`
 - Fluxo: `docker compose up -d alloydb` + `prisma:deploy` + `prisma:seed` + bateria HTTP completa.

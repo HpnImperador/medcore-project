@@ -228,6 +228,12 @@ npm run test:e2e
 cd /home/sppro/medcore-project
 ./scripts/bateria_api_backend.sh
 ```
+
+### Teste Operacional Outbox Cleanup
+```bash
+cd /home/sppro/medcore-project
+./scripts/testar_outbox_cleanup.sh
+```
 Cobertura atual da bateria:
 - `GET /api`
 - `GET /health`
