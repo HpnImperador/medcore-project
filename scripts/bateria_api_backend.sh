@@ -105,7 +105,7 @@ if [[ -z "$TEST_EMAIL" || -z "$TEST_PASSWORD" ]]; then
 fi
 
 if [[ "$ENABLE_BRUTE_FORCE_CHECK" == "1" ]]; then
-  BRUTE_TEST_EMAIL="bruteforce+$(date +%s)@medcore.local"
+  BRUTE_TEST_EMAIL="bruteforce.$(date +%s)@medcore.local"
   BRUTE_TEST_PASSWORD="senha-invalida"
   LAST_ATTEMPT=$((LOGIN_MAX_FAILED_ATTEMPTS + 1))
 
