@@ -210,6 +210,18 @@ export class PrismaOutboxRepository implements IOutboxRepository {
     `;
   }
 
+  async listOrganizationsWithEvents(): Promise<string[]> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{ organization_id: string }>
+    >`
+      SELECT DISTINCT organization_id::text AS organization_id
+      FROM domain_outbox_events
+      WHERE organization_id IS NOT NULL
+    `;
+
+    return rows.map((row) => row.organization_id);
+  }
+
   listMaintenanceAudit(
     organizationId: string,
     limit: number,

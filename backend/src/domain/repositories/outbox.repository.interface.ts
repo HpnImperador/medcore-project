@@ -105,6 +105,7 @@ export interface IOutboxRepository {
     organizationId: string,
     limit: number,
   ): Promise<OutboxReplayAuditEntry[]>;
+  listOrganizationsWithEvents(): Promise<string[]>;
   listMaintenanceAudit(
     organizationId: string,
     limit: number,

@@ -9,6 +9,7 @@ import { OutboxAdminController } from './outbox-admin.controller';
 import { OutboxAdminService } from './outbox-admin.service';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { OutboxMaintenanceService } from './outbox-maintenance.service';
 
 @Module({
   controllers: [OutboxAdminController],
@@ -17,6 +18,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
     PrismaService,
     N8nWebhookService,
     OutboxProcessorService,
+    OutboxMaintenanceService,
     OutboxAdminService,
     JwtStrategy,
     RolesGuard,

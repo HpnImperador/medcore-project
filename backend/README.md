@@ -32,6 +32,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - `GET /outbox/replay-audit`
 - `GET /outbox/maintenance-audit`
 - `POST /outbox/cleanup` (limpeza controlada com `dry_run=true` por padrão)
+- Limpeza automática do Outbox com retenção configurável, guarda de ambiente e auditoria (`OutboxMaintenanceService`).
 - Processador assíncrono de Outbox para entrega de eventos ao n8n.
 - Healthchecks e métricas básicas de processo (`/health/*`).
 
