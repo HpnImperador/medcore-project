@@ -61,7 +61,20 @@ Comandos:
 ```bash
 npm run prisma:migrate
 npm run prisma:deploy
+npm run prisma:seed
 ```
+
+O seed é idempotente e garante:
+- organização demo
+- filial demo
+- médico demo com vínculo em `user_branches`
+- paciente demo
+
+Credenciais e IDs de teste gerados/atualizados:
+- `TEST_EMAIL=medico@medcore.com`
+- `TEST_PASSWORD=123456`
+- `ORGANIZATION_ID`, `BRANCH_ID`, `DOCTOR_ID`, `PATIENT_ID` (exibidos no stdout)
+- arquivo `backend/.seed.env` com variáveis `TEST_*` para uso direto na bateria
 
 ## 🔒 Migração de Senhas Legadas
 Se houver usuários com senha em texto plano, atualize para bcrypt:
@@ -102,6 +115,12 @@ Execução:
 ```bash
 npm run test:e2e
 ```
+
+## 🧪 Bateria Real de API
+Script de smoke para validar integração HTTP ponta a ponta:
+- Arquivo: `../scripts/bateria_api_backend.sh`
+- Fluxos: auth/login, users/me, auth/refresh, auth/logout, auth/logout-all e appointments.
+- Se `backend/.seed.env` existir, a bateria usa os valores `TEST_*` automaticamente.
 
 ## 📝 Padrão de Atualização deste README
 Sempre atualizar, a cada entrega:

@@ -33,6 +33,9 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Persistência de refresh tokens com hash em banco (`refresh_tokens`).
 - Higienização automática de refresh tokens expirados/revogados no fluxo de autenticação.
 - Política de limite de sessões ativas por usuário/organização (`JWT_MAX_ACTIVE_SESSIONS`) com revogação automática dos tokens mais antigos.
+- Script `scripts/bateria_api_backend.sh` atualizado para suportar envelope `{ data, meta }` e cobrir fluxo de sessão (`refresh`, `logout`, `logout-all`).
+- Seed idempotente adicionado em `backend/prisma/seed.js` com script `npm run prisma:seed` para criar/atualizar organização, filial, médico, vínculo em `user_branches` e paciente de teste.
+- Seed agora gera `backend/.seed.env`; `scripts/bateria_api_backend.sh` passa a consumir esse arquivo automaticamente como fallback para `TEST_*`.
 
 ## [2026-02-22]
 

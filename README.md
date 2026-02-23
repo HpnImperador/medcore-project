@@ -114,6 +114,23 @@ cd backend
 npm run test:e2e
 ```
 
+### Rodando Bateria de API (smoke real)
+```bash
+cd /home/sppro/medcore-project
+./scripts/bateria_api_backend.sh
+```
+Cobertura atual da bateria:
+- `GET /api`
+- `POST /auth/login`
+- `GET /users/me`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- validação de refresh revogado (`401`)
+- `POST /auth/logout-all`
+- `POST /appointments`
+- `GET /appointments`
+- `PATCH /appointments/:id/complete`
+
 ## 🛠️ Setup e Execução
 ```bash
 cd backend
@@ -128,6 +145,23 @@ npm run start:dev
 cd backend
 npm run prisma:migrate
 npm run prisma:deploy
+npm run prisma:seed
+```
+
+O `prisma:seed` é idempotente e prepara base mínima para testes:
+- organização e filial demo
+- usuário médico demo (`medico@medcore.com` / `123456`)
+- paciente demo
+- vínculo médico-filial em `user_branches`
+- gera `backend/.seed.env` com `TEST_*` e IDs para a bateria automática
+
+Fluxo rápido de validação real:
+```bash
+cd backend
+npm run prisma:seed
+
+cd ..
+BASE_URL=http://127.0.0.1:3000 ./scripts/bateria_api_backend.sh
 ```
 
 ## 🔎 Exemplo cURL (Agendamento)
