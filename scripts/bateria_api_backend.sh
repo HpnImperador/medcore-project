@@ -229,9 +229,50 @@ JSON
       fail "POST /outbox/replay-failed falhou (HTTP $CODE)."
     fi
 
-    ok "Endpoints admin de lock de login e replay de outbox validados."
+    CODE=$(http_code GET "$BASE_URL/outbox/metrics" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/metrics falhou (HTTP $CODE)."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/outbox/events?status=FAILED&limit=5" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/events falhou (HTTP $CODE)."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/outbox/replay-audit?limit=5" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/replay-audit falhou (HTTP $CODE)."
+    fi
+
+    CLEANUP_PAYLOAD=$(cat <<JSON
+{"retention_days":30,"include_failed":false,"dry_run":true}
+JSON
+)
+    CODE=$(http_code POST "$BASE_URL/outbox/cleanup" \
+      -H "Authorization: Bearer $ADMIN_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d "$CLEANUP_PAYLOAD")
+    if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "POST /outbox/cleanup falhou (HTTP $CODE)."
+    fi
+
+    CODE=$(http_code GET "$BASE_URL/outbox/maintenance-audit?limit=5" \
+      -H "Authorization: Bearer $ADMIN_TOKEN")
+    if [[ "$CODE" != "200" ]]; then
+      cat /tmp/medcore_bateria_body.json
+      fail "GET /outbox/maintenance-audit falhou (HTTP $CODE)."
+    fi
+
+    ok "Endpoints admin de lock/login e operacao Outbox validados."
   else
-    warn "ADMIN_EMAIL/ADMIN_PASSWORD não informados. Pulando validação dos endpoints admin de lock."
+    warn "ADMIN_EMAIL/ADMIN_PASSWORD não informados. Pulando validação dos endpoints admin (lock/login + outbox)."
   fi
 fi
 

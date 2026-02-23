@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  CleanupOutboxEventsInput,
+  CleanupOutboxEventsResult,
   CreateOutboxEventInput,
   IOutboxRepository,
+  ListOutboxEventsInput,
   OutboxEventEntity,
+  OutboxMaintenanceAuditEntry,
   OutboxMetrics,
+  OutboxReplayAuditEntry,
   ReplayFailedEventsInput,
   ReplayFailedEventsResult,
 } from '../../domain/repositories/outbox.repository.interface';
@@ -141,6 +147,92 @@ export class PrismaOutboxRepository implements IOutboxRepository {
     };
   }
 
+  async listEvents(input: ListOutboxEventsInput): Promise<OutboxEventEntity[]> {
+    const normalizedLimit =
+      Number.isNaN(input.limit ?? 0) || (input.limit ?? 0) <= 0
+        ? 50
+        : Math.min(input.limit ?? 50, 200);
+
+    const filters: Prisma.Sql[] = [
+      Prisma.sql`organization_id = ${input.organization_id}::uuid`,
+    ];
+
+    if (input.status) {
+      filters.push(Prisma.sql`status = ${input.status}`);
+    }
+    if (input.event_name) {
+      filters.push(Prisma.sql`event_name = ${input.event_name}`);
+    }
+    if (input.correlation_id) {
+      filters.push(Prisma.sql`correlation_id = ${input.correlation_id}`);
+    }
+
+    return this.prisma.$queryRaw<OutboxEventEntity[]>`
+      SELECT
+        id,
+        organization_id,
+        event_name,
+        payload,
+        status,
+        attempts,
+        correlation_id,
+        triggered_by_user_id,
+        occurred_at,
+        processed_at,
+        last_error
+      FROM domain_outbox_events
+      WHERE ${Prisma.join(filters, ' AND ')}
+      ORDER BY occurred_at DESC
+      LIMIT ${normalizedLimit}
+    `;
+  }
+
+  listReplayAudit(
+    organizationId: string,
+    limit: number,
+  ): Promise<OutboxReplayAuditEntry[]> {
+    const normalizedLimit =
+      Number.isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 200);
+
+    return this.prisma.$queryRaw<OutboxReplayAuditEntry[]>`
+      SELECT
+        id,
+        outbox_event_id,
+        organization_id,
+        requested_by_user_id,
+        reason,
+        mode,
+        created_at
+      FROM outbox_replay_audit
+      WHERE organization_id = ${organizationId}::uuid
+      ORDER BY created_at DESC
+      LIMIT ${normalizedLimit}
+    `;
+  }
+
+  listMaintenanceAudit(
+    organizationId: string,
+    limit: number,
+  ): Promise<OutboxMaintenanceAuditEntry[]> {
+    const normalizedLimit =
+      Number.isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 200);
+
+    return this.prisma.$queryRaw<OutboxMaintenanceAuditEntry[]>`
+      SELECT
+        id,
+        organization_id,
+        requested_by_user_id,
+        action,
+        criteria,
+        affected_count,
+        created_at
+      FROM outbox_maintenance_audit
+      WHERE organization_id = ${organizationId}::uuid
+      ORDER BY created_at DESC
+      LIMIT ${normalizedLimit}
+    `;
+  }
+
   async replayFailedEvents(
     input: ReplayFailedEventsInput,
   ): Promise<ReplayFailedEventsResult> {
@@ -229,5 +321,60 @@ export class PrismaOutboxRepository implements IOutboxRepository {
         skipped: Math.max(0, requested - replayed),
       };
     });
+  }
+
+  async cleanupEvents(
+    input: CleanupOutboxEventsInput,
+  ): Promise<CleanupOutboxEventsResult> {
+    const statuses = input.include_failed
+      ? ['PROCESSED', 'FAILED']
+      : ['PROCESSED'];
+    const safeRetentionDays = Math.min(Math.max(input.retention_days, 1), 3650);
+
+    const rows = await this.prisma.$queryRaw<Array<{ deleted_count: number }>>`
+      SELECT COUNT(*)::int AS deleted_count
+      FROM domain_outbox_events
+      WHERE organization_id = ${input.organization_id}::uuid
+        AND status = ANY(${statuses}::text[])
+        AND COALESCE(processed_at, occurred_at) <
+          (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+    `;
+    const affectedCount = rows[0]?.deleted_count ?? 0;
+
+    if (!input.dry_run && affectedCount > 0) {
+      await this.prisma.$executeRaw`
+        DELETE FROM domain_outbox_events
+        WHERE organization_id = ${input.organization_id}::uuid
+          AND status = ANY(${statuses}::text[])
+          AND COALESCE(processed_at, occurred_at) <
+            (CURRENT_TIMESTAMP - (${safeRetentionDays} * INTERVAL '1 day'))
+      `;
+    }
+
+    await this.prisma.$executeRaw`
+      INSERT INTO outbox_maintenance_audit (
+        organization_id,
+        requested_by_user_id,
+        action,
+        criteria,
+        affected_count
+      )
+      VALUES (
+        ${input.organization_id}::uuid,
+        ${input.requested_by_user_id}::uuid,
+        'CLEANUP',
+        ${JSON.stringify({
+          include_failed: input.include_failed,
+          retention_days: safeRetentionDays,
+          dry_run: input.dry_run,
+        })}::jsonb,
+        ${affectedCount}
+      )
+    `;
+
+    return {
+      deleted_count: affectedCount,
+      dry_run: input.dry_run,
+    };
   }
 }

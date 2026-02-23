@@ -127,6 +127,12 @@ BACKUP_FILE=/home/sppro/medcore-project/backup/medcore_db_YYYYMMDD_HHMMSS.sql.gz
 - Endpoint `GET /auth/login-lock` para inspeção de bloqueio de login (ADMIN).
 - Endpoint `POST /auth/login-lock/clear` para desbloqueio manual de login (ADMIN).
 - Endpoint `POST /outbox/replay-failed` para replay manual de eventos FAILED do Outbox (ADMIN), com auditoria.
+- Endpoints ADMIN do dashboard operacional do Outbox:
+- `GET /outbox/metrics`
+- `GET /outbox/events`
+- `GET /outbox/replay-audit`
+- `GET /outbox/maintenance-audit`
+- `POST /outbox/cleanup` (limpeza controlada com `dry_run=true` por padrão)
 - Limite de sessões ativas por usuário/organização com revogação automática das mais antigas.
 - Proteção de brute force no login com bloqueio progressivo por tentativas inválidas (email + IP).
 - Endpoint `GET /users/me` implementado para perfil do usuário autenticado.
@@ -151,6 +157,7 @@ Observação: este README será mantido incrementalmente para refletir exatament
 - `doctor_schedules`
 - `domain_outbox_events`
 - `outbox_replay_audit`
+- `outbox_maintenance_audit`
 
 ## 🔐 Payload JWT Esperado
 Campos mínimos no token:
@@ -221,6 +228,11 @@ Cobertura atual da bateria:
 - `GET /health/outbox`
 - `GET /health/alert-check`
 - `POST /outbox/replay-failed` (ADMIN)
+- `GET /outbox/metrics` (ADMIN)
+- `GET /outbox/events` (ADMIN)
+- `GET /outbox/replay-audit` (ADMIN)
+- `GET /outbox/maintenance-audit` (ADMIN)
+- `POST /outbox/cleanup` (ADMIN)
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
 - bloqueio de conflito de horário por médico em agendamento (`400`, janela configurável)
@@ -240,7 +252,7 @@ Cobertura atual da bateria:
 Variáveis úteis da bateria:
 - `ENABLE_BRUTE_FORCE_CHECK` (default `1`)
 - `LOGIN_MAX_FAILED_ATTEMPTS` (default `5`)
-- `ADMIN_EMAIL` / `ADMIN_PASSWORD` (valida endpoints admin de lock quando informados)
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` (valida endpoints admin de lock + operação Outbox quando informados)
 - `BRUTE_FORCE_TEST_IP` (default `198.51.100.10`)
 
 ## 🛠️ Setup e Execução

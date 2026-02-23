@@ -26,6 +26,12 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Swagger com autenticação Bearer JWT.
 - Outbox transacional para eventos de agendamento (`domain_outbox_events`).
 - Endpoint ADMIN para replay manual de eventos FAILED (`POST /outbox/replay-failed`) com auditoria em `outbox_replay_audit`.
+- Dashboard operacional ADMIN do Outbox com:
+- `GET /outbox/metrics`
+- `GET /outbox/events`
+- `GET /outbox/replay-audit`
+- `GET /outbox/maintenance-audit`
+- `POST /outbox/cleanup` (limpeza controlada com `dry_run=true` por padrão)
 - Processador assíncrono de Outbox para entrega de eventos ao n8n.
 - Healthchecks e métricas básicas de processo (`/health/*`).
 
@@ -132,6 +138,8 @@ WHERE email = 'medico@medcore.com';
 - `GET /health/alert-check`: dispara alerta operacional via webhook se status estiver `degraded`/`error`.
 - `GET /health/alerts`: histórico recente de alertas operacionais disparados.
 - Histórico de alertas persistido em banco na tabela `health_alert_events`.
+- Auditoria de replay manual persistida em `outbox_replay_audit`.
+- Auditoria de limpeza controlada persistida em `outbox_maintenance_audit`.
 - Logs HTTP emitidos em JSON estruturado (`event=http_request_completed`).
 
 ## 🧪 Checks de Qualidade

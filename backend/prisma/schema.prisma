@@ -1011,3 +1011,16 @@ model outbox_replay_audit {
   @@index([outbox_event_id, created_at])
   @@index([organization_id, created_at])
 }
+
+model outbox_maintenance_audit {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id      String   @db.Uuid
+  requested_by_user_id String   @db.Uuid
+  action               String   @db.VarChar(40)
+  criteria             Json
+  affected_count       Int
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([organization_id, created_at])
+  @@index([action, created_at])
+}

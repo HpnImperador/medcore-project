@@ -49,6 +49,47 @@ export interface ReplayFailedEventsResult {
   skipped: number;
 }
 
+export interface ListOutboxEventsInput {
+  organization_id: string;
+  status?: OutboxEventStatus;
+  event_name?: string;
+  correlation_id?: string;
+  limit?: number;
+}
+
+export interface OutboxReplayAuditEntry {
+  id: string;
+  outbox_event_id: string | null;
+  organization_id: string;
+  requested_by_user_id: string;
+  reason: string | null;
+  mode: string;
+  created_at: Date;
+}
+
+export interface CleanupOutboxEventsInput {
+  organization_id: string;
+  requested_by_user_id: string;
+  retention_days: number;
+  include_failed: boolean;
+  dry_run: boolean;
+}
+
+export interface CleanupOutboxEventsResult {
+  deleted_count: number;
+  dry_run: boolean;
+}
+
+export interface OutboxMaintenanceAuditEntry {
+  id: string;
+  organization_id: string;
+  requested_by_user_id: string;
+  action: string;
+  criteria: unknown;
+  affected_count: number;
+  created_at: Date;
+}
+
 export interface IOutboxRepository {
   enqueue(input: CreateOutboxEventInput): Promise<void>;
   findProcessable(
@@ -59,7 +100,19 @@ export interface IOutboxRepository {
   markProcessed(eventId: string): Promise<void>;
   markFailed(eventId: string, errorMessage: string): Promise<void>;
   getMetrics(): Promise<OutboxMetrics>;
+  listEvents(input: ListOutboxEventsInput): Promise<OutboxEventEntity[]>;
+  listReplayAudit(
+    organizationId: string,
+    limit: number,
+  ): Promise<OutboxReplayAuditEntry[]>;
+  listMaintenanceAudit(
+    organizationId: string,
+    limit: number,
+  ): Promise<OutboxMaintenanceAuditEntry[]>;
   replayFailedEvents(
     input: ReplayFailedEventsInput,
   ): Promise<ReplayFailedEventsResult>;
+  cleanupEvents(
+    input: CleanupOutboxEventsInput,
+  ): Promise<CleanupOutboxEventsResult>;
 }
