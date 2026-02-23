@@ -32,6 +32,7 @@ Formato baseado em Keep a Changelog e versionamento semântico.
   - `POST /auth/logout-all`
 - Persistência de refresh tokens com hash em banco (`refresh_tokens`).
 - Higienização automática de refresh tokens expirados/revogados no fluxo de autenticação.
+- Política de limite de sessões ativas por usuário/organização (`JWT_MAX_ACTIVE_SESSIONS`) com revogação automática dos tokens mais antigos.
 
 ## [2026-02-22]
 

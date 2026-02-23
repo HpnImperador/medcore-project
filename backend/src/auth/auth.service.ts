@@ -225,6 +225,12 @@ export class AuthService {
       expires_at: expiresAt,
     });
 
+    await this.enforceMaxActiveSessions(
+      params.userId,
+      params.organizationId,
+      created.id,
+    );
+
     return {
       token: refreshToken,
       id: created.id,
@@ -248,6 +254,53 @@ export class AuthService {
 
   private hashToken(value: string): string {
     return createHash('sha256').update(value).digest('hex');
+  }
+
+  private async enforceMaxActiveSessions(
+    userId: string,
+    organizationId: string,
+    newestTokenId: string,
+  ): Promise<void> {
+    const maxActiveSessions = this.getMaxActiveSessions();
+    if (maxActiveSessions < 1) {
+      return;
+    }
+
+    const activeTokens =
+      await this.refreshTokensRepository.listActiveByUserInOrganization(
+        userId,
+        organizationId,
+      );
+
+    if (activeTokens.length <= maxActiveSessions) {
+      return;
+    }
+
+    // Mantém o token recém emitido e revoga os mais antigos acima do limite.
+    const revocableTokens = activeTokens
+      .filter((token) => token.id !== newestTokenId)
+      .slice(0, Math.max(0, activeTokens.length - maxActiveSessions));
+
+    if (revocableTokens.length === 0) {
+      return;
+    }
+
+    await this.refreshTokensRepository.revokeManyByIds(
+      revocableTokens.map((token) => token.id),
+    );
+  }
+
+  private getMaxActiveSessions(): number {
+    const configuredValue = this.configService.get<string>(
+      'JWT_MAX_ACTIVE_SESSIONS',
+    );
+    const parsedValue = Number.parseInt(configuredValue ?? '', 10);
+
+    if (Number.isNaN(parsedValue) || parsedValue <= 0) {
+      return 5;
+    }
+
+    return parsedValue;
   }
 
   private parseDurationToMs(duration: string): number {

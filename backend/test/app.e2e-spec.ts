@@ -227,6 +227,30 @@ describe('MedCore API (e2e)', () => {
       );
       return Promise.resolve(found ?? null);
     }),
+    listActiveByUserInOrganization: jest.fn(
+      (userId: string, organizationId: string) =>
+        Promise.resolve(
+          refreshTokensStore
+            .filter(
+              (item) =>
+                item.user_id === userId &&
+                item.organization_id === organizationId &&
+                item.revoked_at === null &&
+                item.expires_at > new Date(),
+            )
+            .sort((a, b) => a.created_at.getTime() - b.created_at.getTime()),
+        ),
+    ),
+    revokeManyByIds: jest.fn((tokenIds: string[]) => {
+      const revokedAt = new Date();
+      refreshTokensStore.forEach((item) => {
+        if (tokenIds.includes(item.id) && item.revoked_at === null) {
+          item.revoked_at = revokedAt;
+          item.last_used_at = revokedAt;
+        }
+      });
+      return Promise.resolve();
+    }),
     revokeById: jest.fn((tokenId: string, replacedByTokenId?: string) => {
       const found = refreshTokensStore.find((item) => item.id === tokenId);
       if (found) {

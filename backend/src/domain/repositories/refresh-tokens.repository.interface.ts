@@ -20,6 +20,11 @@ export interface CreateRefreshTokenInput {
 export interface IRefreshTokensRepository {
   create(input: CreateRefreshTokenInput): Promise<RefreshTokenEntity>;
   findActiveByHash(tokenHash: string): Promise<RefreshTokenEntity | null>;
+  listActiveByUserInOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<RefreshTokenEntity[]>;
+  revokeManyByIds(tokenIds: string[]): Promise<void>;
   revokeById(tokenId: string, replacedByTokenId?: string): Promise<void>;
   touchUsage(tokenId: string): Promise<void>;
   revokeByHash(tokenHash: string): Promise<void>;

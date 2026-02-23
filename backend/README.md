@@ -42,6 +42,7 @@ API do projeto MedCore desenvolvida com NestJS + Prisma + PostgreSQL.
 - Regra de vínculo médico-filial via `user_branches`.
 - Login exige `password_hash` em formato bcrypt (`$2a$`, `$2b$` ou `$2y$`).
 - Refresh tokens persistidos com hash e rotação segura.
+- Limite de sessões ativas com revogação automática dos refresh tokens mais antigos.
 - Política de higiene aplicada em autenticação: purge de tokens expirados/revogados.
 
 ## ⚙️ Execução Local

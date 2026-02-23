@@ -22,6 +22,15 @@ interface RefreshTokensDelegate {
       expires_at: { gt: Date };
     };
   }): Promise<RefreshTokenEntity | null>;
+  findMany(args: {
+    where: {
+      user_id: string;
+      organization_id: string;
+      revoked_at: null;
+      expires_at: { gt: Date };
+    };
+    orderBy: { created_at: 'asc' | 'desc' };
+  }): Promise<RefreshTokenEntity[]>;
   update(args: {
     where: { id: string };
     data: {
@@ -32,6 +41,7 @@ interface RefreshTokensDelegate {
   }): Promise<RefreshTokenEntity>;
   updateMany(args: {
     where: {
+      id?: { in: string[] };
       token_hash?: string;
       user_id?: string;
       organization_id?: string;
@@ -81,6 +91,25 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
     });
   }
 
+  listActiveByUserInOrganization(
+    userId: string,
+    organizationId: string,
+  ): Promise<RefreshTokenEntity[]> {
+    return this.refreshTokensDelegate.findMany({
+      where: {
+        user_id: userId,
+        organization_id: organizationId,
+        revoked_at: null,
+        expires_at: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        created_at: 'asc',
+      },
+    });
+  }
+
   async revokeById(tokenId: string, replacedByTokenId?: string): Promise<void> {
     await this.refreshTokensDelegate.update({
       where: { id: tokenId },
@@ -96,6 +125,23 @@ export class PrismaRefreshTokensRepository implements IRefreshTokensRepository {
     await this.refreshTokensDelegate.update({
       where: { id: tokenId },
       data: {
+        last_used_at: new Date(),
+      },
+    });
+  }
+
+  async revokeManyByIds(tokenIds: string[]): Promise<void> {
+    if (tokenIds.length === 0) {
+      return;
+    }
+
+    await this.refreshTokensDelegate.updateMany({
+      where: {
+        id: { in: tokenIds },
+        revoked_at: null,
+      },
+      data: {
+        revoked_at: new Date(),
         last_used_at: new Date(),
       },
     });
