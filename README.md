@@ -47,6 +47,7 @@ Sistema de gestão médica desenvolvido com NestJS e Prisma, com foco em SaaS mu
   - Data de agendamento precisa ser futura (`@IsFutureDate`).
   - Cancelamento/Reagendamento bloqueados para agendamentos já concluídos/cancelados.
   - Motivo operacional registrado em `notes` para trilha de auditoria da consulta.
+  - Bloqueio de conflito de agenda: mesmo médico não pode ter duas consultas no mesmo horário (`400`).
 
 ### Webhook n8n
 - Ao concluir uma consulta (`PATCH /appointments/:id/complete`), a API dispara webhook assíncrono.
@@ -164,6 +165,7 @@ Cobertura atual da bateria:
 - `GET /health/alert-check`
 - `GET /health/alerts`
 - proteção de brute force em login (`401` até limite e `429` ao bloquear)
+- bloqueio de conflito de horário por médico em agendamento (`400`)
 - `POST /auth/login`
 - `GET /users/me`
 - `POST /auth/refresh`

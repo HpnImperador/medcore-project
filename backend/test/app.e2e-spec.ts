@@ -230,6 +230,24 @@ describe('MedCore API (e2e)', () => {
     isBranchFromOrganization: jest.fn((bId: string, orgId: string) =>
       Promise.resolve(bId === branchId && orgId === organizationId),
     ),
+    hasDoctorScheduleConflict: jest.fn(
+      (
+        orgId: string,
+        docId: string,
+        scheduledAt: Date,
+        excludeAppointmentId?: string,
+      ) =>
+        Promise.resolve(
+          appointmentsStore.some(
+            (item) =>
+              item.organization_id === orgId &&
+              item.doctor_id === docId &&
+              item.scheduled_at.getTime() === scheduledAt.getTime() &&
+              item.status !== 'CANCELED' &&
+              (!excludeAppointmentId || item.id !== excludeAppointmentId),
+          ),
+        ),
+    ),
     findAllByOrganizationAndBranches: jest.fn(
       (orgId: string, branches: string[]) =>
         Promise.resolve(

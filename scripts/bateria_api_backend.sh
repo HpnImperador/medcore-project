@@ -324,6 +324,16 @@ if [[ -z "$APPOINTMENT_ID" || "$APPOINTMENT_ID" == "undefined" ]]; then
 fi
 ok "Criação de agendamento validada (id=$APPOINTMENT_ID)."
 
+CODE=$(http_code POST "$BASE_URL/appointments" \
+  -H "Authorization: Bearer $NEW_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$CREATE_APPT_PAYLOAD")
+if [[ "$CODE" != "400" ]]; then
+  cat /tmp/medcore_bateria_body.json
+  fail "Conflito de agenda não bloqueado (esperado 400, recebido $CODE)."
+fi
+ok "Conflito de horário por médico validado (HTTP 400)."
+
 CODE=$(http_code GET "$BASE_URL/appointments" \
   -H "Authorization: Bearer $NEW_TOKEN")
 if [[ "$CODE" != "200" ]]; then

@@ -41,9 +41,13 @@ interface AppointmentsDelegate {
   }): Promise<AppointmentEntity>;
   findFirst(args: {
     where: {
-      id: string;
+      id?: string;
       organization_id: string;
       branch_id?: { in: string[] };
+      doctor_id?: string;
+      scheduled_at?: Date;
+      status?: { not: string };
+      NOT?: { id: string };
     };
   }): Promise<AppointmentEntity | null>;
   findMany(args: {
@@ -80,6 +84,25 @@ export class PrismaAppointmentsRepository implements IAppointmentsRepository {
         notes: input.notes,
       },
     });
+  }
+
+  async hasDoctorScheduleConflict(
+    organizationId: string,
+    doctorId: string,
+    scheduledAt: Date,
+    excludeAppointmentId?: string,
+  ): Promise<boolean> {
+    const conflict = await this.appointmentsDelegate.findFirst({
+      where: {
+        organization_id: organizationId,
+        doctor_id: doctorId,
+        scheduled_at: scheduledAt,
+        status: { not: 'CANCELED' },
+        ...(excludeAppointmentId ? { NOT: { id: excludeAppointmentId } } : {}),
+      },
+    });
+
+    return Boolean(conflict);
   }
 
   async completeByIdInOrganizationAndBranches(

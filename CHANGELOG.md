@@ -67,6 +67,8 @@ Formato baseado em Keep a Changelog e versionamento semântico.
 - Bateria API ampliada para validar `GET /health/alerts`.
 - Persistência do histórico de alertas em PostgreSQL com tabela `health_alert_events` e migration dedicada.
 - `HealthAlertService` migrado de buffer em memória para Repository Pattern com consulta persistida.
+- Regra de negócio adicionada para bloquear conflito de agenda por médico no mesmo horário em criação/reagendamento.
+- Bateria API ampliada para validar conflito de horário com retorno `400`.
 
 ## [2026-02-22]
 

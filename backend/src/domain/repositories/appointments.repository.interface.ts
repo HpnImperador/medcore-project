@@ -42,6 +42,12 @@ export interface UpdateAppointmentRepositoryInput {
 
 export interface IAppointmentsRepository {
   create(input: CreateAppointmentRepositoryInput): Promise<AppointmentEntity>;
+  hasDoctorScheduleConflict(
+    organizationId: string,
+    doctorId: string,
+    scheduledAt: Date,
+    excludeAppointmentId?: string,
+  ): Promise<boolean>;
   findByIdInOrganizationAndBranches(
     appointmentId: string,
     organizationId: string,

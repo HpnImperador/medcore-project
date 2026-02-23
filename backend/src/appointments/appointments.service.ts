@@ -84,6 +84,12 @@ export class AppointmentsService {
       );
     }
 
+    await this.ensureDoctorAvailability(
+      currentUser.organizationId,
+      dto.doctor_id,
+      dto.scheduled_at,
+    );
+
     const appointment = await this.appointmentsRepository.create({
       organization_id: currentUser.organizationId,
       branch_id: dto.branch_id,
@@ -175,6 +181,12 @@ export class AppointmentsService {
     );
 
     this.ensureCanMutateAppointment(existing.status, 'reagendar');
+    await this.ensureDoctorAvailability(
+      currentUser.organizationId,
+      existing.doctor_id,
+      dto.scheduled_at,
+      appointmentId,
+    );
 
     const reason = dto.reason?.trim();
     const currentNotes = existing.notes?.trim() ?? '';
@@ -277,6 +289,27 @@ export class AppointmentsService {
     if (normalizedStatus === 'CANCELED') {
       throw new BadRequestException(
         `Não é possível ${actionLabel} um agendamento já cancelado.`,
+      );
+    }
+  }
+
+  private async ensureDoctorAvailability(
+    organizationId: string,
+    doctorId: string,
+    scheduledAt: Date,
+    excludeAppointmentId?: string,
+  ): Promise<void> {
+    const hasConflict =
+      await this.appointmentsRepository.hasDoctorScheduleConflict(
+        organizationId,
+        doctorId,
+        scheduledAt,
+        excludeAppointmentId,
+      );
+
+    if (hasConflict) {
+      throw new BadRequestException(
+        'Conflito de agenda: médico já possui consulta neste horário.',
       );
     }
   }
